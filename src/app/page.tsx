@@ -2,8 +2,9 @@ import { InsulationResistanceAnalyzer } from '@/components/insulation-resistance
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-24 bg-secondary">
+    // Remove centering and specific padding, let layout handle container
+    <div className="flex flex-col items-center justify-center">
       <InsulationResistanceAnalyzer />
-    </main>
+    </div>
   );
 }

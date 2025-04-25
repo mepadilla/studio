@@ -1,7 +1,20 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import './globals.css';
 import Link from 'next/link'; // Import Link for navigation
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarShortcut,
+  MenubarSub,
+  MenubarSubContent,
+  MenubarSubTrigger,
+  MenubarTrigger,
+} from "@/components/ui/menubar"; // Import Menubar components
+import { cn } from '@/lib/utils';
+import './globals.css';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -25,8 +38,41 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es"> {/* Changed lang to Spanish */}
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
-        <main className="flex-grow">
+      <body className={cn(
+        geistSans.variable,
+        geistMono.variable,
+        "antialiased flex flex-col min-h-screen"
+      )}>
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+           <div className="container flex h-14 items-center">
+               <Menubar className="border-none shadow-none rounded-none bg-transparent">
+                   <MenubarMenu>
+                       <MenubarTrigger>Documentación</MenubarTrigger>
+                       {/* <MenubarContent>
+                         <MenubarItem>...</MenubarItem> Add documentation links here
+                       </MenubarContent> */}
+                   </MenubarMenu>
+                   <MenubarMenu>
+                       <MenubarTrigger>Herramientas</MenubarTrigger>
+                       <MenubarContent>
+                         <MenubarSub>
+                           <MenubarSubTrigger>Pruebas Eléctricas</MenubarSubTrigger>
+                           <MenubarSubContent>
+                             <MenubarItem>
+                               <Link href="/" className="w-full">
+                                   Analizador Resistencia Aislamiento
+                               </Link>
+                             </MenubarItem>
+                             {/* Add more tools here */}
+                           </MenubarSubContent>
+                         </MenubarSub>
+                         {/* Add more tool categories here */}
+                       </MenubarContent>
+                   </MenubarMenu>
+               </Menubar>
+           </div>
+        </header>
+        <main className="flex-grow container py-6"> {/* Add container and padding */}
            {children}
         </main>
         <footer className="w-full py-4 px-6 mt-auto text-center text-xs text-muted-foreground bg-background border-t border-border">
