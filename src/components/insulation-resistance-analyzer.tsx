@@ -109,7 +109,7 @@ export function InsulationResistanceAnalyzer() {
   const [isLoadingPdf, setIsLoadingPdf] = React.useState(false);
   const [showResults, setShowResults] = React.useState(false); // State to control results visibility
   const resultsRef = React.useRef<HTMLDivElement>(null); // Ref for scrolling
-  const chartRef = React.useRef<HTMLDivElement>(null); // Ref for the chart container used in PDF
+  const innerChartRef = React.useRef<HTMLDivElement>(null); // Ref for the inner chart container used in PDF
 
   const { toast } = useToast(); // Initialize toast
 
@@ -324,7 +324,7 @@ export function InsulationResistanceAnalyzer() {
         const colWidth = contentWidth / 2 - 5; // Adjust col width for gap
 
         // --- Column 1: Chart ---
-        const chartElement = chartRef.current; // Use the ref here
+        const chartElement = innerChartRef.current; // Use the inner chart ref here
         let leftColEndY = resultsStartY;
         if (chartElement && chartData.length > 0) {
             const chartTitleY = currentY;
@@ -694,12 +694,13 @@ export function InsulationResistanceAnalyzer() {
             <Separator className="my-6 bg-border" />
             <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                {/* Chart Card - Spanning 3 columns */}
-               <div ref={chartRef} className="md:col-span-3">
+               <div className="md:col-span-3"> {/* Outer div for layout */}
                   <Card className="bg-card shadow-md rounded-md h-full">
                       <CardHeader>
                          <CardTitle className="text-lg text-primary">Resistencia vs. Tiempo</CardTitle>
                       </CardHeader>
-                      <CardContent className="pr-6 pt-4"> {/* Added padding for chart */}
+                      {/* Move the ref to the direct parent of ResistanceChart for PDF capture */}
+                      <CardContent ref={innerChartRef} className="pr-6 pt-4">
                          {chartData.length > 0 ? (
                              <ResistanceChart data={chartData} />
                           ) : (
