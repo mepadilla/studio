@@ -47,7 +47,7 @@ export default function RootLayout({
            <div className="container flex h-14 items-center">
                <Menubar className="border-none shadow-none rounded-none bg-transparent">
                     <MenubarMenu>
-                         {/* Wrap MenubarTrigger in Link for Inicio */}
+                         {/* Wrap MenubarTrigger in Link for Inicio, ensuring it points to '/' */}
                          <Link href="/" passHref legacyBehavior>
                            <MenubarTrigger>Inicio</MenubarTrigger>
                          </Link>
