@@ -256,47 +256,54 @@ export function InsulationResistanceAnalyzer() {
          if (currentY + 60 > pageHeight) { doc.addPage(); currentY = margin; } // Estimate height + title check
          doc.setFontSize(14);
          doc.setFont(undefined, 'bold');
-         doc.text('Lecturas de Resistencia de Aislamiento (GΩ)', margin, currentY);
+         doc.text('Lecturas de Resistencia de Aislamiento', margin, currentY); // Title without units here
          currentY += 6;
          doc.setFontSize(10);
          doc.setFont(undefined, 'normal');
 
          // Prepare body data for the 4-column layout
          const readingsBody4Col: (string | number)[][] = [];
-         const numRows = Math.ceil(timePoints.length / 2); // 13 points / 2 columns = 7 rows
+         const numRows = Math.ceil(timePoints.length / 2); // 7 rows for 13 points split in half
 
          for (let i = 0; i < numRows; i++) {
            const row: (string | number)[] = [];
-           // Column 1 & 2 (index i)
-           const point1 = timePoints[i];
-           if (point1) {
-             row.push(point1.label);
-             row.push(formData.readings[`t${point1.value}`] ?? 'N/D');
+           // Column 1 & 2 (index i) - Max 6 rows, so index 0 to 5
+           const point1Index = i;
+            if (point1Index < 6) { // Only fill first 6 rows for the first pair of columns
+               const point1 = timePoints[point1Index];
+               if (point1) {
+                 row.push(point1.label);
+                 row.push(formData.readings[`t${point1.value}`] ?? 'N/D');
+               } else {
+                 row.push(''); // Should not happen with current logic but good practice
+                 row.push('');
+               }
            } else {
-             row.push(''); // Empty cell if no data
-             row.push(''); // Empty cell if no data
+                row.push(''); // Empty cells for row 7 in first two columns
+                row.push('');
            }
 
-           // Column 3 & 4 (index i + numRows)
-           const point2Index = i + numRows;
+
+           // Column 3 & 4 (index i + 6) - Indices 6 to 12
+           const point2Index = i + 6; // Start from 4 min (index 6)
            const point2 = timePoints[point2Index];
            if (point2) {
               row.push(point2.label);
               row.push(formData.readings[`t${point2.value}`] ?? 'N/D');
            } else {
-              row.push(''); // Empty cell if no data
-              row.push(''); // Empty cell if no data
+              row.push(''); // Empty cell if no data (e.g., if fewer than 13 points)
+              row.push('');
            }
            readingsBody4Col.push(row);
          }
 
          autoTable(doc, {
            startY: currentY,
-           head: [['Tiempo', 'Resistencia (GΩ)', 'Tiempo', 'Resistencia (GΩ)']],
+           head: [['Tiempo', 'Resistencia (G-OHM)', 'Tiempo', 'Resistencia (G-OHM)']], // Updated Header
            body: readingsBody4Col,
            theme: 'grid',
            styles: { fontSize: 9, cellPadding: 1.5, halign: 'center' },
-           headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold' },
+           headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center' },
            columnStyles: {
              0: { cellWidth: 'auto', halign: 'left' },
              1: { cellWidth: 'auto', halign: 'right' },
@@ -457,7 +464,7 @@ export function InsulationResistanceAnalyzer() {
         const tableConfig = {
           theme: 'grid' as const,
           styles: { fontSize: 9, cellPadding: 1.5, halign: 'left' },
-          headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold' }, // Light Gray Header
+          headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center' }, // Center header text
           tableWidth: colWidth,
           margin: { left: rightColX }, // Position table in the right column
           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
@@ -474,11 +481,12 @@ export function InsulationResistanceAnalyzer() {
             ['> 4.0', 'Excelente'],
           ],
           ...tableConfig,
+          columnStyles: { 0: { halign: 'center' }, 1: { halign: 'left' } }, // Center first column
           // Add a caption below the table
           didDrawTable: (data) => {
             doc.setFontSize(8);
             doc.setTextColor(100, 100, 100); // Muted text color
-            doc.text("Referencia Índice de Polarización (PI)", rightColX, data.cursor.y + 4);
+            doc.text("Referencia Índice de Polarización (PI)", rightColX + colWidth/2 , data.cursor.y + 4, { align: 'center' });
             currentY = data.cursor.y + 8; // Update Y pos after caption
           },
         });
@@ -496,10 +504,11 @@ export function InsulationResistanceAnalyzer() {
             ['> 1.6', 'Excelente'],
           ],
           ...tableConfig,
+           columnStyles: { 0: { halign: 'center' }, 1: { halign: 'left' } }, // Center first column
            didDrawTable: (data) => {
             doc.setFontSize(8);
             doc.setTextColor(100, 100, 100); // Muted text color
-            doc.text("Referencia Ratio de Absorción Dieléctrica (DAR)", rightColX, data.cursor.y + 4);
+            doc.text("Referencia Ratio de Absorción Dieléctrica (DAR)", rightColX + colWidth/2, data.cursor.y + 4, { align: 'center' });
             currentY = data.cursor.y + 8; // Update Y pos after caption
           },
         });
@@ -525,6 +534,7 @@ export function InsulationResistanceAnalyzer() {
         // Tester Signature
         doc.text('Firma del Técnico:', signatureXStart, signatureY);
         doc.line(signatureXStart, signatureY + 5, signatureXStart + signatureLineLength, signatureY + 5);
+        doc.text(formData.testerName, signatureXStart, signatureY + 10); // Add name below line
 
         // Supervisor Signature (Aligned Right)
         const supervisorXStart = signatureXEnd - signatureLineLength;
@@ -556,23 +566,23 @@ export function InsulationResistanceAnalyzer() {
   return (
     <>
      <Toaster /> {/* Add Toaster component here */}
-    <Card className="w-full max-w-4xl shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold text-primary flex items-center">
+    <Card className="w-full max-w-4xl shadow-lg rounded-lg overflow-hidden">
+      <CardHeader className="bg-primary text-primary-foreground">
+        <CardTitle className="text-2xl font-bold flex items-center">
           <Thermometer className="mr-2 h-6 w-6" />
           Analizador de Resistencia de Aislamiento
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-primary-foreground/80">
           Introduce los detalles de la prueba y las lecturas de resistencia para calcular PI y DAR.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-6 bg-secondary/30">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Test Details Section */}
-            <Card className="bg-card">
+            <Card className="bg-card shadow-md rounded-md">
               <CardHeader>
-                <CardTitle className="text-lg">Detalles de la Prueba</CardTitle>
+                <CardTitle className="text-lg text-primary">Detalles de la Prueba</CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
@@ -580,9 +590,9 @@ export function InsulationResistanceAnalyzer() {
                   name="testerName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nombre del Técnico</FormLabel>
+                      <FormLabel className="text-foreground/80">Nombre del Técnico</FormLabel>
                       <FormControl>
-                        <Input placeholder="Introduce el nombre" {...field} />
+                        <Input placeholder="Introduce el nombre" {...field} className="rounded-md" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -593,9 +603,9 @@ export function InsulationResistanceAnalyzer() {
                   name="motorId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>ID del Motor</FormLabel>
+                      <FormLabel className="text-foreground/80">ID del Motor</FormLabel>
                       <FormControl>
-                        <Input placeholder="Introduce el ID del motor" {...field} />
+                        <Input placeholder="Introduce el ID del motor" {...field} className="rounded-md"/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -606,9 +616,9 @@ export function InsulationResistanceAnalyzer() {
                   name="motorSerial"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nro. de Serie del Motor</FormLabel>
+                      <FormLabel className="text-foreground/80">Nro. de Serie del Motor</FormLabel>
                       <FormControl>
-                        <Input placeholder="Introduce el Nro. de Serie" {...field} />
+                        <Input placeholder="Introduce el Nro. de Serie" {...field} className="rounded-md"/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -617,13 +627,13 @@ export function InsulationResistanceAnalyzer() {
               </CardContent>
             </Card>
 
-            <Separator />
+            <Separator className="bg-border my-4" />
 
             {/* Resistance Readings Section */}
-            <Card className="bg-card">
+            <Card className="bg-card shadow-md rounded-md">
               <CardHeader>
-                <CardTitle className="text-lg">
-                  Lecturas de Resistencia de Aislamiento (GΩ)
+                <CardTitle className="text-lg text-primary">
+                  Lecturas de Resistencia de Aislamiento (G-OHM) {/* Changed unit here */}
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -634,14 +644,14 @@ export function InsulationResistanceAnalyzer() {
                     name={`readings.t${point.value}`}
                     render={({ field, fieldState }) => (
                       <FormItem>
-                        <FormLabel>{point.label}</FormLabel>
+                        <FormLabel className="text-foreground/80">{point.label}</FormLabel>
                         <FormControl>
                           <Input
                              type="number"
                              step="any"
-                             placeholder="GΩ"
+                             placeholder="G-OHM" // Changed placeholder
                              {...field}
-                             className={cn(fieldState.error && "border-destructive focus-visible:ring-destructive")}
+                             className={cn("rounded-md",fieldState.error && "border-destructive focus-visible:ring-destructive")}
                            />
                         </FormControl>
                         <FormMessage />
@@ -650,24 +660,26 @@ export function InsulationResistanceAnalyzer() {
                   />
                 ))}
               </CardContent>
-                 <CardFooter className="text-xs text-muted-foreground pt-4">
-                     <AlertCircle className="mr-1 h-3 w-3" /> Introduce las lecturas en Gigaohmios (GΩ). Introduce 0 si la lectura es 0.
+                 <CardFooter className="text-xs text-muted-foreground pt-4 flex items-center">
+                     <AlertCircle className="mr-1 h-3 w-3 text-muted-foreground/70" /> Introduce las lecturas en Gigaohmios (G-OHM). Introduce 0 si la lectura es 0. {/* Changed unit here */}
                  </CardFooter>
             </Card>
 
-            <Separator />
+             <Separator className="bg-border my-4"/>
 
-            <div className="flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-4">
+
+            <div className="flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-4 pt-4">
                <Button
                 type="button"
                 onClick={generatePDF}
                 disabled={!formData || isLoadingPdf} // Disable if no data OR loading
                 variant="outline"
+                className="rounded-md border-primary text-primary hover:bg-primary/10"
                >
                 <FileDown className="mr-2 h-4 w-4" />
                  {isLoadingPdf ? 'Generando PDF...' : 'Descargar Reporte PDF'}
                </Button>
-              <Button type="submit" variant="default" className="bg-accent hover:bg-accent/90">
+              <Button type="submit" variant="default" className="bg-accent hover:bg-accent/90 rounded-md text-accent-foreground">
                 <Calculator className="mr-2 h-4 w-4" />
                 Calcular Índices y Mostrar Gráfico
               </Button>
@@ -679,16 +691,15 @@ export function InsulationResistanceAnalyzer() {
         <div ref={resultsRef}> {/* Add ref here */}
          {showResults && (polarizationIndex !== null || dielectricAbsorptionRatio !== null) && (
           <>
-            <Separator className="my-6" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               {/* Chart Card - Visible on screen */}
-               {/* Container for chart, use ref for PDF generation */}
-               <div ref={chartRef} className="md:col-span-1">
-                  <Card className="bg-card h-full">
+            <Separator className="my-6 bg-border" />
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+               {/* Chart Card - Spanning 3 columns */}
+               <div ref={chartRef} className="md:col-span-3">
+                  <Card className="bg-card shadow-md rounded-md h-full">
                       <CardHeader>
-                         <CardTitle className="text-lg">Resistencia vs. Tiempo</CardTitle>
+                         <CardTitle className="text-lg text-primary">Resistencia vs. Tiempo</CardTitle>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="pr-6 pt-4"> {/* Added padding for chart */}
                          {chartData.length > 0 ? (
                              <ResistanceChart data={chartData} />
                           ) : (
@@ -700,8 +711,8 @@ export function InsulationResistanceAnalyzer() {
                    </Card>
                 </div>
 
-
-               <div className="space-y-4 md:col-span-1">
+               {/* Indices and Reference - Spanning 2 columns */}
+               <div className="space-y-4 md:col-span-2">
                  <IndexResults
                    pi={polarizationIndex}
                    dar={dielectricAbsorptionRatio}
@@ -718,5 +729,3 @@ export function InsulationResistanceAnalyzer() {
    </>
   );
 }
-
-    
