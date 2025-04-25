@@ -14,32 +14,32 @@ import {
 
 export function IndexReferenceTable() {
   const piReference = [
-    { range: '< 1.0', condition: 'Dangerous' },
-    { range: '1.0 - 2.0', condition: 'Questionable' },
-    { range: '2.0 - 4.0', condition: 'Good' },
-    { range: '> 4.0', condition: 'Excellent' },
+    { range: '< 1.0', condition: 'Peligroso' },
+    { range: '1.0 - 2.0', condition: 'Cuestionable' },
+    { range: '2.0 - 4.0', condition: 'Bueno' },
+    { range: '> 4.0', condition: 'Excelente' },
   ];
 
   const darReference = [
-    { range: '< 1.0', condition: 'Bad' },
-    { range: '1.0 - 1.25', condition: 'Questionable' },
-    { range: '1.25 - 1.6', condition: 'Good' },
-    { range: '> 1.6', condition: 'Excellent' },
+    { range: '< 1.0', condition: 'Malo' },
+    { range: '1.0 - 1.25', condition: 'Cuestionable' },
+    { range: '1.25 - 1.6', condition: 'Bueno' },
+    { range: '> 1.6', condition: 'Excelente' },
   ];
 
   return (
     <Card className="bg-card">
       <CardHeader>
-        <CardTitle className="text-lg">Reference Values (IEEE Std 43-2013)</CardTitle>
+        <CardTitle className="text-lg">Valores de Referencia (IEEE Std 43-2013)</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* PI Reference Table */}
         <Table>
-          <TableCaption className="text-xs text-muted-foreground mt-1">Polarization Index (PI) Reference</TableCaption>
+          <TableCaption className="text-xs text-muted-foreground mt-1">Referencia Índice de Polarización (PI)</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[150px]">PI Value</TableHead>
-              <TableHead>Condition</TableHead>
+              <TableHead className="w-[150px]">Valor PI</TableHead>
+              <TableHead>Condición</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -54,11 +54,11 @@ export function IndexReferenceTable() {
 
         {/* DAR Reference Table */}
         <Table>
-          <TableCaption className="text-xs text-muted-foreground mt-1">Dielectric Absorption Ratio (DAR) Reference</TableCaption>
+          <TableCaption className="text-xs text-muted-foreground mt-1">Referencia Ratio de Absorción Dieléctrica (DAR)</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[150px]">DAR Value</TableHead>
-              <TableHead>Condition</TableHead>
+              <TableHead className="w-[150px]">Valor DAR</TableHead>
+              <TableHead>Condición</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

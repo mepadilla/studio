@@ -13,14 +13,14 @@ interface IndexResultsProps {
 export function IndexResults({ pi, dar, getCondition }: IndexResultsProps) {
   const getBadgeVariant = (condition: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (condition.toLowerCase()) {
-      case 'excellent':
-      case 'good':
-        return 'default'; // Using default which often maps to primary
-      case 'questionable':
-        return 'secondary'; // Use secondary for warning/questionable
-      case 'bad':
-      case 'dangerous':
-        return 'destructive'; // Use destructive for bad/dangerous
+      case 'excelente':
+      case 'bueno':
+        return 'default'; // Using default which often maps to primary (Greenish/Blueish usually)
+      case 'cuestionable':
+        return 'secondary'; // Use secondary for warning/questionable (Yellowish/Orangeish)
+      case 'malo':
+      case 'peligroso':
+        return 'destructive'; // Use destructive for bad/dangerous (Reddish)
       default:
         return 'outline';
     }
@@ -30,33 +30,37 @@ export function IndexResults({ pi, dar, getCondition }: IndexResultsProps) {
   return (
     <Card className="bg-card">
       <CardHeader>
-        <CardTitle className="text-lg">Calculated Indices</CardTitle>
+        <CardTitle className="text-lg">Índices Calculados</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-between items-center">
-          <span className="font-medium text-foreground">Polarization Index (PI):</span>
+          <span className="font-medium text-foreground">Índice de Polarización (PI):</span>
           {pi !== null ? (
             <div className="text-right">
-              <span className="text-lg font-semibold text-primary mr-2">{pi.toFixed(2)}</span>
+              <span className="text-lg font-semibold text-primary mr-2">
+                 {isFinite(pi) ? pi.toFixed(2) : '∞'} {/* Handle Infinity */}
+              </span>
                <Badge variant={getBadgeVariant(getCondition(pi, 'PI'))}>
                   {getCondition(pi, 'PI')}
                </Badge>
             </div>
           ) : (
-            <span className="text-muted-foreground">N/A</span>
+            <span className="text-muted-foreground">N/D</span>
           )}
         </div>
         <div className="flex justify-between items-center">
-          <span className="font-medium text-foreground">Dielectric Absorption Ratio (DAR):</span>
+          <span className="font-medium text-foreground">Ratio de Absorción Dieléctrica (DAR):</span>
           {dar !== null ? (
              <div className="text-right">
-              <span className="text-lg font-semibold text-primary mr-2">{dar.toFixed(2)}</span>
+              <span className="text-lg font-semibold text-primary mr-2">
+                {isFinite(dar) ? dar.toFixed(2) : '∞'} {/* Handle Infinity */}
+              </span>
                <Badge variant={getBadgeVariant(getCondition(dar, 'DAR'))}>
                  {getCondition(dar, 'DAR')}
                </Badge>
             </div>
           ) : (
-            <span className="text-muted-foreground">N/A</span>
+            <span className="text-muted-foreground">N/D</span>
           )}
         </div>
       </CardContent>

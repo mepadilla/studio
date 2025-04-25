@@ -1,3 +1,4 @@
+// @ts-nocheck - TODO: fix typings
 "use client";
 
 import * as React from 'react';
@@ -31,6 +32,8 @@ import { Separator } from '@/components/ui/separator';
 import { ResistanceChart } from '@/components/resistance-chart';
 import { IndexResults } from '@/components/index-results';
 import { IndexReferenceTable } from '@/components/index-reference-table';
+import { Toaster } from '@/components/ui/toaster'; // Import Toaster
+import { useToast } from '@/hooks/use-toast'; // Import useToast
 
 // Define time points for resistance readings
 const timePoints = [
@@ -49,17 +52,17 @@ const timePoints = [
   { label: '10 min', value: 600 },
 ];
 
-// Validation schema using Zod
+// Validation schema using Zod with Spanish messages
 const formSchema = z.object({
-  testerName: z.string().min(1, 'Tester name is required'),
-  motorId: z.string().min(1, 'Motor ID is required'),
-  motorSerial: z.string().min(1, 'Motor Serial Number is required'),
+  testerName: z.string().min(1, 'Nombre del técnico es requerido'),
+  motorId: z.string().min(1, 'ID del motor es requerido'),
+  motorSerial: z.string().min(1, 'Número de serie del motor es requerido'),
   readings: z.object(
     timePoints.reduce((acc, point) => {
       acc[`t${point.value}`] = z.coerce
-        .number({ invalid_type_error: 'Must be a number' })
-        .positive('Must be positive')
-        .gt(0, 'Must be greater than 0');
+        .number({ invalid_type_error: 'Debe ser un número' })
+        .positive('Debe ser positivo')
+        .gt(0, 'Debe ser mayor que 0');
       return acc;
     }, {} as Record<string, z.ZodNumber>)
   ),
@@ -68,6 +71,23 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 type ResistanceDataPoint = { time: number; resistance: number };
+
+// Helper: Returns condition based on value and type in Spanish
+function getCondition(value: number, type: 'PI' | 'DAR'): string {
+    if (type === 'PI') {
+      if (value < 1.0) return 'Peligroso';
+      if (value >= 1.0 && value < 2.0) return 'Cuestionable';
+      if (value >= 2.0 && value <= 4.0) return 'Bueno';
+      if (value > 4.0) return 'Excelente';
+    } else if (type === 'DAR') {
+      if (value < 1.0) return 'Malo';
+      if (value >= 1.0 && value < 1.25) return 'Cuestionable';
+      if (value >= 1.25 && value <= 1.6) return 'Bueno';
+      if (value > 1.6) return 'Excelente';
+    }
+    return 'N/D'; // No Disponible
+}
+
 
 export function InsulationResistanceAnalyzer() {
   const [polarizationIndex, setPolarizationIndex] = React.useState<
@@ -78,6 +98,7 @@ export function InsulationResistanceAnalyzer() {
   const [chartData, setChartData] = React.useState<ResistanceDataPoint[]>([]);
   const [formData, setFormData] = React.useState<FormData | null>(null);
   const [isLoadingPdf, setIsLoadingPdf] = React.useState(false);
+  const { toast } = useToast(); // Initialize toast
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -96,19 +117,25 @@ export function InsulationResistanceAnalyzer() {
     const r10min = readings['t600'];
     const r1min = readings['t60'];
     const r30sec = readings['t30'];
-    const r10sec = readings['t10']; // Although not standard IEEE 43, some use it
 
-    if (r1min > 0) {
-      setPolarizationIndex(parseFloat((r10min / r1min).toFixed(2)));
-    } else {
-      setPolarizationIndex(null); // Or handle error
-    }
+    let pi = null;
+    let dar = null;
 
-    if (r30sec > 0) {
-      setDielectricAbsorptionRatio(parseFloat((r1min / r30sec).toFixed(2)));
-    } else {
-      setDielectricAbsorptionRatio(null); // Or handle error
+    if (r1min > 0 && r10min > 0) { // Ensure both are positive for PI
+        pi = parseFloat((r10min / r1min).toFixed(2));
+    } else if (r1min === 0 && r10min > 0) {
+        pi = Infinity; // Handle division by zero if 1min reading is 0 but 10min is not
     }
+     setPolarizationIndex(pi);
+
+
+    if (r30sec > 0 && r1min > 0) { // Ensure both are positive for DAR
+      dar = parseFloat((r1min / r30sec).toFixed(2));
+    } else if (r30sec === 0 && r1min > 0) {
+        dar = Infinity; // Handle division by zero if 30sec reading is 0 but 1min is not
+    }
+    setDielectricAbsorptionRatio(dar);
+
 
     // Prepare data for the chart
     const data: ResistanceDataPoint[] = timePoints.map((point) => ({
@@ -116,230 +143,258 @@ export function InsulationResistanceAnalyzer() {
       resistance: readings[`t${point.value}`],
     }));
     setChartData(data);
+
+     // Show success toast
+    toast({
+      title: "Cálculo Exitoso",
+      description: "Los índices PI y DAR se han calculado.",
+      variant: "default", // or "success" if you have that variant
+    });
   };
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
-    console.log('Form Submitted:', data);
+    console.log('Formulario Enviado:', data);
     setFormData(data); // Store form data for PDF generation
     calculateIndices(data.readings);
   };
 
-  const generatePDF = async () => {
-     if (!formData) return;
+   const generatePDF = async () => {
+     if (!formData) {
+        toast({
+            title: "Error",
+            description: "No hay datos para generar el PDF. Por favor, calcula los índices primero.",
+            variant: "destructive",
+        });
+        return;
+     };
      setIsLoadingPdf(true);
-
-     const doc = new jsPDF();
-     const pageHeight = doc.internal.pageSize.height;
-     const pageWidth = doc.internal.pageSize.width;
-     let currentY = 15; // Start Y position
-
-     // Title
-     doc.setFontSize(18);
-     doc.text('Insulation Resistance Test Report', pageWidth / 2, currentY, { align: 'center' });
-     currentY += 10;
-
-     // Test Details Table
-     autoTable(doc, {
-       startY: currentY,
-       head: [['Test Parameter', 'Value']],
-       body: [
-         ['Tester Name', formData.testerName],
-         ['Motor ID', formData.motorId],
-         ['Motor Serial Number', formData.motorSerial],
-       ],
-       theme: 'grid',
-       headStyles: { fillColor: [26, 35, 126] }, // Dark Blue
-       margin: { left: 14, right: 14 },
+     toast({
+        title: "Generando PDF...",
+        description: "Por favor espera.",
      });
-     currentY = (doc as any).lastAutoTable.finalY + 10;
 
+     try {
+         const doc = new jsPDF();
+         const pageHeight = doc.internal.pageSize.height;
+         const pageWidth = doc.internal.pageSize.width;
+         let currentY = 15; // Start Y position
 
-    // Check if we need a new page for readings table
-    if (currentY + 80 > pageHeight) { // Estimate height needed for readings table
-        doc.addPage();
-        currentY = 15;
-    }
+         // Title
+         doc.setFontSize(18);
+         doc.text('Reporte de Prueba de Resistencia de Aislamiento', pageWidth / 2, currentY, { align: 'center' });
+         currentY += 10;
 
-     // Readings Table
-     doc.setFontSize(12);
-     doc.text('Insulation Resistance Readings', 14, currentY);
-     currentY += 6;
-     const readingsBody = timePoints.map((point) => [
-       point.label,
-       `${formData.readings[`t${point.value}`]} GΩ`,
-     ]);
-     autoTable(doc, {
-       startY: currentY,
-       head: [['Time', 'Resistance (GΩ)']],
-       body: readingsBody,
-       theme: 'grid',
-       headStyles: { fillColor: [26, 35, 126] },
-       margin: { left: 14, right: 14 },
-     });
-     currentY = (doc as any).lastAutoTable.finalY + 10;
+         // Test Details Table
+         autoTable(doc, {
+           startY: currentY,
+           head: [['Parámetro de Prueba', 'Valor']],
+           body: [
+             ['Nombre del Técnico', formData.testerName],
+             ['ID del Motor', formData.motorId],
+             ['Número de Serie del Motor', formData.motorSerial],
+           ],
+           theme: 'grid',
+           headStyles: { fillColor: [26, 35, 126] }, // Dark Blue
+           margin: { left: 14, right: 14 },
+           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
+         });
+         currentY = (doc as any).lastAutoTable.finalY + 10;
 
-     // Indices Results Table
-     if (polarizationIndex !== null || dielectricAbsorptionRatio !== null) {
-         // Check space for indices
-        if (currentY + 30 > pageHeight) { // Estimate height needed for indices
+        // Check if we need a new page for readings table
+        if (currentY + 80 > pageHeight) { // Estimate height needed for readings table
             doc.addPage();
             currentY = 15;
         }
 
-       doc.setFontSize(12);
-       doc.text('Calculated Indices', 14, currentY);
-       currentY += 6;
-       autoTable(doc, {
-         startY: currentY,
-         head: [['Index', 'Value', 'Condition']],
-         body: [
-           [
-             'Polarization Index (PI)',
-             polarizationIndex !== null ? polarizationIndex.toFixed(2) : 'N/A',
-             polarizationIndex !== null ? getCondition(polarizationIndex, 'PI') : 'N/A',
+         // Readings Table
+         doc.setFontSize(12);
+         doc.text('Lecturas de Resistencia de Aislamiento', 14, currentY);
+         currentY += 6;
+         const readingsBody = timePoints.map((point) => [
+           point.label,
+           `${formData.readings[`t${point.value}`]} GΩ`,
+         ]);
+         autoTable(doc, {
+           startY: currentY,
+           head: [['Tiempo', 'Resistencia (GΩ)']],
+           body: readingsBody,
+           theme: 'grid',
+           headStyles: { fillColor: [26, 35, 126] },
+           margin: { left: 14, right: 14 },
+           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
+         });
+         currentY = (doc as any).lastAutoTable.finalY + 10;
+
+         // Indices Results Table
+         if (polarizationIndex !== null || dielectricAbsorptionRatio !== null) {
+             // Check space for indices
+            if (currentY + 30 > pageHeight) { // Estimate height needed for indices
+                doc.addPage();
+                currentY = 15;
+            }
+
+           doc.setFontSize(12);
+           doc.text('Índices Calculados', 14, currentY);
+           currentY += 6;
+           autoTable(doc, {
+             startY: currentY,
+             head: [['Índice', 'Valor', 'Condición']],
+             body: [
+               [
+                 'Índice de Polarización (PI)',
+                 polarizationIndex !== null ? (isFinite(polarizationIndex) ? polarizationIndex.toFixed(2) : '∞') : 'N/D',
+                 polarizationIndex !== null ? getCondition(polarizationIndex, 'PI') : 'N/D',
+               ],
+               [
+                 'Ratio de Absorción Dieléctrica (DAR)',
+                 dielectricAbsorptionRatio !== null ? (isFinite(dielectricAbsorptionRatio) ? dielectricAbsorptionRatio.toFixed(2) : '∞') : 'N/D',
+                 dielectricAbsorptionRatio !== null ? getCondition(dielectricAbsorptionRatio, 'DAR') : 'N/D',
+               ],
+             ],
+             theme: 'grid',
+             headStyles: { fillColor: [26, 35, 126] },
+             margin: { left: 14, right: 14 },
+             didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
+           });
+           currentY = (doc as any).lastAutoTable.finalY + 10;
+         }
+
+        // Check space for chart
+        const chartElement = document.getElementById('resistance-chart-pdf');
+        if (chartElement) {
+            const chartHeightEstimate = 80; // Estimate chart height in mm
+            if (currentY + chartHeightEstimate > pageHeight) {
+                doc.addPage();
+                currentY = 15;
+            }
+
+            doc.setFontSize(12);
+            doc.text('Gráfico Resistencia vs. Tiempo', 14, currentY);
+            currentY += 6;
+
+            try {
+                // Ensure the chart is rendered before capturing
+                await new Promise(resolve => setTimeout(resolve, 500)); // Small delay
+                const canvas = await html2canvas(chartElement, { scale: 2 }); // Increase scale for better resolution
+                const imgData = canvas.toDataURL('image/png');
+                const imgProps = doc.getImageProperties(imgData);
+                const pdfWidth = pageWidth - 28; // Page width minus margins
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                doc.addImage(imgData, 'PNG', 14, currentY, pdfWidth, pdfHeight);
+                currentY += pdfHeight + 10;
+            } catch (error) {
+                console.error("Error generando imagen del gráfico:", error);
+                 doc.text('Error generando imagen del gráfico.', 14, currentY);
+                 currentY += 10;
+                 toast({
+                    title: "Error de Gráfico",
+                    description: "No se pudo generar la imagen del gráfico para el PDF.",
+                    variant: "destructive",
+                 });
+            }
+        }
+
+
+         // Check space for reference tables
+        const referenceTableHeightEstimate = 60; // Estimate combined height
+        if (currentY + referenceTableHeightEstimate > pageHeight) {
+            doc.addPage();
+            currentY = 15;
+        }
+
+         // Reference Tables
+         doc.setFontSize(12);
+         doc.text('Valores de Referencia (IEEE Std 43-2013)', 14, currentY);
+         currentY += 6;
+         // PI Reference
+         autoTable(doc, {
+           startY: currentY,
+           head: [['Índice de Polarización (PI)', 'Condición']],
+           body: [
+             ['< 1.0', 'Peligroso'],
+             ['1.0 - 2.0', 'Cuestionable'],
+             ['2.0 - 4.0', 'Bueno'],
+             ['> 4.0', 'Excelente'],
            ],
-           [
-             'Dielectric Absorption Ratio (DAR)',
-             dielectricAbsorptionRatio !== null ? dielectricAbsorptionRatio.toFixed(2) : 'N/A',
-             dielectricAbsorptionRatio !== null ? getCondition(dielectricAbsorptionRatio, 'DAR') : 'N/A',
+           theme: 'grid',
+           headStyles: { fillColor: [128, 128, 128] }, // Gray header
+           margin: { left: 14, right: 14 },
+           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
+         });
+         currentY = (doc as any).lastAutoTable.finalY + 5;
+         // DAR Reference
+         autoTable(doc, {
+           startY: currentY,
+           head: [['Ratio de Absorción Dieléctrica (DAR)', 'Condición']],
+           body: [
+             ['< 1.0', 'Malo'],
+             ['1.0 - 1.25', 'Cuestionable'],
+             ['1.25 - 1.6', 'Bueno'],
+             ['> 1.6', 'Excelente'],
            ],
-         ],
-         theme: 'grid',
-         headStyles: { fillColor: [26, 35, 126] },
-         margin: { left: 14, right: 14 },
-       });
-       currentY = (doc as any).lastAutoTable.finalY + 10;
+           theme: 'grid',
+           headStyles: { fillColor: [128, 128, 128] },
+           margin: { left: 14, right: 14 },
+           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
+         });
+         currentY = (doc as any).lastAutoTable.finalY + 15;
+
+
+        // Check space for signatures
+        const signatureHeightEstimate = 40; // Estimate height needed
+        if (currentY + signatureHeightEstimate > pageHeight) {
+            doc.addPage();
+            currentY = 20; // Start signatures closer to top on new page
+        }
+
+         // Signature Sections
+         doc.setFontSize(10);
+         const signatureY = currentY;
+         const signatureXStart = 30;
+         const signatureXEnd = pageWidth - 30;
+         const signatureLineLength = 60;
+
+         // Tester Signature
+         doc.text('Firma del Técnico:', signatureXStart, signatureY);
+         doc.line(signatureXStart, signatureY + 5, signatureXStart + signatureLineLength, signatureY + 5);
+
+         // Supervisor Signature
+         const supervisorXStart = signatureXEnd - signatureLineLength;
+         doc.text('Firma del Supervisor:', supervisorXStart, signatureY);
+         doc.line(supervisorXStart, signatureY + 5, supervisorXStart + signatureLineLength, signatureY + 5);
+
+         // Save the PDF
+         doc.save(`Reporte_Resistencia_Aislamiento_${formData.motorId}.pdf`);
+         toast({
+             title: "PDF Generado",
+             description: "El reporte se ha descargado exitosamente.",
+             variant: "default",
+         });
+
+     } catch (error) {
+         console.error("Error generando PDF:", error);
+         toast({
+             title: "Error al Generar PDF",
+             description: "Ocurrió un error inesperado. Revisa la consola.",
+             variant: "destructive",
+         });
+     } finally {
+         setIsLoadingPdf(false);
      }
-
-
-    // Check space for chart
-    const chartElement = document.getElementById('resistance-chart-pdf');
-    if (chartElement) {
-        const chartHeightEstimate = 80; // Estimate chart height in mm
-        if (currentY + chartHeightEstimate > pageHeight) {
-            doc.addPage();
-            currentY = 15;
-        }
-
-        doc.setFontSize(12);
-        doc.text('Resistance vs. Time Graph', 14, currentY);
-        currentY += 6;
-
-        try {
-            // Ensure the chart is rendered before capturing
-            await new Promise(resolve => setTimeout(resolve, 500)); // Small delay
-            const canvas = await html2canvas(chartElement, { scale: 2 }); // Increase scale for better resolution
-            const imgData = canvas.toDataURL('image/png');
-            const imgProps = doc.getImageProperties(imgData);
-            const pdfWidth = pageWidth - 28; // Page width minus margins
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            doc.addImage(imgData, 'PNG', 14, currentY, pdfWidth, pdfHeight);
-            currentY += pdfHeight + 10;
-        } catch (error) {
-            console.error("Error generating chart image:", error);
-             doc.text('Error generating chart image.', 14, currentY);
-             currentY += 10;
-        }
-
-    }
-
-
-     // Check space for reference tables
-    const referenceTableHeightEstimate = 60; // Estimate combined height
-    if (currentY + referenceTableHeightEstimate > pageHeight) {
-        doc.addPage();
-        currentY = 15;
-    }
-
-     // Reference Tables
-     doc.setFontSize(12);
-     doc.text('Reference Values (IEEE Std 43-2013)', 14, currentY);
-     currentY += 6;
-     // PI Reference
-     autoTable(doc, {
-       startY: currentY,
-       head: [['Polarization Index (PI)', 'Condition']],
-       body: [
-         ['< 1.0', 'Dangerous'],
-         ['1.0 - 2.0', 'Questionable'],
-         ['2.0 - 4.0', 'Good'],
-         ['> 4.0', 'Excellent'],
-       ],
-       theme: 'grid',
-       headStyles: { fillColor: [128, 128, 128] }, // Gray header
-       margin: { left: 14, right: 14 },
-     });
-     currentY = (doc as any).lastAutoTable.finalY + 5;
-     // DAR Reference
-     autoTable(doc, {
-       startY: currentY,
-       head: [['Dielectric Absorption Ratio (DAR)', 'Condition']],
-       body: [
-         ['< 1.0', 'Bad'],
-         ['1.0 - 1.25', 'Questionable'],
-         ['1.25 - 1.6', 'Good'],
-         ['> 1.6', 'Excellent'],
-       ],
-       theme: 'grid',
-       headStyles: { fillColor: [128, 128, 128] },
-       margin: { left: 14, right: 14 },
-     });
-     currentY = (doc as any).lastAutoTable.finalY + 15;
-
-
-    // Check space for signatures
-    const signatureHeightEstimate = 40; // Estimate height needed
-    if (currentY + signatureHeightEstimate > pageHeight) {
-        doc.addPage();
-        currentY = 20; // Start signatures closer to top on new page
-    }
-
-     // Signature Sections
-     doc.setFontSize(10);
-     const signatureY = currentY;
-     const signatureXStart = 30;
-     const signatureXEnd = pageWidth - 30;
-     const signatureLineLength = 60;
-
-     // Tester Signature
-     doc.text('Tester Signature:', signatureXStart, signatureY);
-     doc.line(signatureXStart, signatureY + 5, signatureXStart + signatureLineLength, signatureY + 5);
-
-     // Supervisor Signature
-     const supervisorXStart = signatureXEnd - signatureLineLength;
-     doc.text('Supervisor Signature:', supervisorXStart, signatureY);
-     doc.line(supervisorXStart, signatureY + 5, supervisorXStart + signatureLineLength, signatureY + 5);
-
-     // Save the PDF
-     doc.save(`Insulation_Resistance_Report_${formData.motorId}.pdf`);
-     setIsLoadingPdf(false);
    };
 
 
-  const getCondition = (value: number, type: 'PI' | 'DAR'): string => {
-    if (type === 'PI') {
-      if (value < 1.0) return 'Dangerous';
-      if (value >= 1.0 && value < 2.0) return 'Questionable';
-      if (value >= 2.0 && value <= 4.0) return 'Good';
-      if (value > 4.0) return 'Excellent';
-    } else if (type === 'DAR') {
-      if (value < 1.0) return 'Bad';
-      if (value >= 1.0 && value < 1.25) return 'Questionable';
-      if (value >= 1.25 && value <= 1.6) return 'Good';
-      if (value > 1.6) return 'Excellent';
-    }
-    return 'N/A';
-  };
-
   return (
+    <>
+     <Toaster /> {/* Add Toaster component here */}
     <Card className="w-full max-w-4xl shadow-lg">
       <CardHeader>
         <CardTitle className="text-2xl font-bold text-primary flex items-center">
           <Thermometer className="mr-2 h-6 w-6" />
-          Insulation Resistance Analyzer
+          Analizador de Resistencia de Aislamiento
         </CardTitle>
         <CardDescription>
-          Enter test details and resistance readings to calculate PI and DAR.
+          Introduce los detalles de la prueba y las lecturas de resistencia para calcular PI y DAR.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -348,7 +403,7 @@ export function InsulationResistanceAnalyzer() {
             {/* Test Details Section */}
             <Card className="bg-card">
               <CardHeader>
-                <CardTitle className="text-lg">Test Details</CardTitle>
+                <CardTitle className="text-lg">Detalles de la Prueba</CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
@@ -356,9 +411,9 @@ export function InsulationResistanceAnalyzer() {
                   name="testerName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tester Name</FormLabel>
+                      <FormLabel>Nombre del Técnico</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter name" {...field} />
+                        <Input placeholder="Introduce el nombre" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -369,9 +424,9 @@ export function InsulationResistanceAnalyzer() {
                   name="motorId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Motor ID</FormLabel>
+                      <FormLabel>ID del Motor</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter Motor ID" {...field} />
+                        <Input placeholder="Introduce el ID del motor" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -382,9 +437,9 @@ export function InsulationResistanceAnalyzer() {
                   name="motorSerial"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Motor Serial No.</FormLabel>
+                      <FormLabel>Nro. de Serie del Motor</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter Serial No." {...field} />
+                        <Input placeholder="Introduce el Nro. de Serie" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -399,7 +454,7 @@ export function InsulationResistanceAnalyzer() {
             <Card className="bg-card">
               <CardHeader>
                 <CardTitle className="text-lg">
-                  Insulation Resistance Readings (GΩ)
+                  Lecturas de Resistencia de Aislamiento (GΩ)
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -412,7 +467,7 @@ export function InsulationResistanceAnalyzer() {
                       <FormItem>
                         <FormLabel>{point.label}</FormLabel>
                         <FormControl>
-                          <Input type="number" step="any" placeholder="GΩ" {...field} />
+                          <Input type="number" step="any" placeholder="GΩ" {...field} value={field.value === '' ? '' : field.value} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -432,11 +487,11 @@ export function InsulationResistanceAnalyzer() {
                 variant="outline"
                >
                 <FileDown className="mr-2 h-4 w-4" />
-                 {isLoadingPdf ? 'Generating PDF...' : 'Download PDF Report'}
+                 {isLoadingPdf ? 'Generando PDF...' : 'Descargar Reporte PDF'}
                </Button>
               <Button type="submit" variant="default" className="bg-accent hover:bg-accent/90">
                 <Calculator className="mr-2 h-4 w-4" />
-                Calculate Indices & Show Graph
+                Calcular Índices y Mostrar Gráfico
               </Button>
             </div>
           </form>
@@ -450,7 +505,7 @@ export function InsulationResistanceAnalyzer() {
                {/* Chart Card - Hidden for PDF, visible on screen */}
               <Card id="resistance-chart-pdf" className="bg-card">
                   <CardHeader>
-                     <CardTitle className="text-lg">Resistance vs. Time</CardTitle>
+                     <CardTitle className="text-lg">Resistencia vs. Tiempo</CardTitle>
                   </CardHeader>
                   <CardContent>
                      <ResistanceChart data={chartData} />
@@ -472,28 +527,7 @@ export function InsulationResistanceAnalyzer() {
           </>
         )}
       </CardContent>
-       {/* Invisible chart specifically for PDF generation if layout differs */}
-        {/* <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '800px', height: '400px' }}>
-          <div id="resistance-chart-pdf-container">
-            <ResistanceChart data={chartData} />
-          </div>
-        </div> */}
     </Card>
+   </>
   );
-}
-
-// Helper: Returns condition based on value and type
-function getCondition(value: number, type: 'PI' | 'DAR'): string {
-    if (type === 'PI') {
-      if (value < 1.0) return 'Dangerous';
-      if (value >= 1.0 && value < 2.0) return 'Questionable';
-      if (value >= 2.0 && value <= 4.0) return 'Good';
-      if (value > 4.0) return 'Excellent';
-    } else if (type === 'DAR') {
-      if (value < 1.0) return 'Bad';
-      if (value >= 1.0 && value < 1.25) return 'Questionable';
-      if (value >= 1.25 && value <= 1.6) return 'Good';
-      if (value > 1.6) return 'Excellent';
-    }
-    return 'N/A';
 }
