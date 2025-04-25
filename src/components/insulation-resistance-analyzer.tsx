@@ -306,9 +306,9 @@ export function InsulationResistanceAnalyzer() {
            headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 8.5 }, // Smaller head font
            columnStyles: {
              0: { cellWidth: 'auto', halign: 'left' },
-             1: { cellWidth: 'auto', halign: 'right' },
+             1: { cellWidth: 'auto', halign: 'center' }, // Center resistance column 1
              2: { cellWidth: 'auto', halign: 'left' },
-             3: { cellWidth: 'auto', halign: 'right' },
+             3: { cellWidth: 'auto', halign: 'center' }, // Center resistance column 2
            },
            margin: { left: margin, right: margin },
            didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
