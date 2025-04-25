@@ -27,8 +27,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Analizador de Resistencia de Aislamiento',
-  description: 'Calcula PI y DAR para motores eléctricos.',
+  title: 'Herramientas de Diagnóstico Eléctrico y Mecánico', // Updated title
+  description: 'Herramientas prácticas para el diagnóstico de motores eléctricos y bombas de agua.', // Updated description
 };
 
 export default function RootLayout({
@@ -46,6 +46,13 @@ export default function RootLayout({
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
            <div className="container flex h-14 items-center">
                <Menubar className="border-none shadow-none rounded-none bg-transparent">
+                    <MenubarMenu>
+                         {/* Wrap MenubarTrigger in Link for Inicio */}
+                         <Link href="/" passHref legacyBehavior>
+                           <MenubarTrigger>Inicio</MenubarTrigger>
+                         </Link>
+                         {/* No content needed as it links directly */}
+                     </MenubarMenu>
                    <MenubarMenu>
                        {/* Wrap MenubarTrigger in Link */}
                        <Link href="/documentation" passHref legacyBehavior>
@@ -59,9 +66,9 @@ export default function RootLayout({
                          <MenubarSub>
                            <MenubarSubTrigger>Pruebas Eléctricas</MenubarSubTrigger>
                            <MenubarSubContent>
-                             {/* Link remains inside MenubarItem */}
+                             {/* Link remains inside MenubarItem, updated href */}
                              <MenubarItem asChild>
-                               <Link href="/" className="w-full">
+                               <Link href="/tools/electrical/insulation-resistance" className="w-full">
                                    Analizador Resistencia Aislamiento
                                </Link>
                              </MenubarItem>
