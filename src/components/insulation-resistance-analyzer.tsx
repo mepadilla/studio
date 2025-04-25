@@ -219,20 +219,20 @@ export function InsulationResistanceAnalyzer() {
          let currentY = margin; // Start Y position
 
          // Title
-         doc.setFontSize(18);
+         doc.setFontSize(16); // Slightly smaller title
          doc.setFont(undefined, 'bold');
          doc.setTextColor(Number('0x1A'), Number('0x23'), Number('0x7E')); // Primary color (Dark Blue)
          doc.text('Reporte de Resistencia de Aislamiento', pageWidth / 2, currentY, { align: 'center' });
          doc.setFont(undefined, 'normal');
          doc.setTextColor(0, 0, 0); // Reset color
-         currentY += 10;
+         currentY += 8; // Reduced space after title
 
         // --- Test Details Section ---
-         doc.setFontSize(14);
+         doc.setFontSize(12); // Slightly smaller section title
          doc.setFont(undefined, 'bold');
          doc.text('Detalles de la Prueba', margin, currentY);
-         currentY += 6;
-         doc.setFontSize(10);
+         currentY += 5; // Reduced space
+         doc.setFontSize(9); // Smaller table font
          doc.setFont(undefined, 'normal');
          autoTable(doc, {
            startY: currentY,
@@ -243,22 +243,22 @@ export function InsulationResistanceAnalyzer() {
              ['Nro. de Serie del Motor:', formData.motorSerial],
            ],
            theme: 'grid',
-           styles: { fontSize: 10, cellPadding: 2 },
-           headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold' }, // Light Gray Header
-           columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 }, 1: { cellWidth: contentWidth - 50} },
+           styles: { fontSize: 9, cellPadding: 1.5 }, // Reduced padding
+           headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', fontSize: 9 }, // Smaller head font
+           columnStyles: { 0: { fontStyle: 'bold', cellWidth: 45 }, 1: { cellWidth: contentWidth - 45} }, // Adjusted width
            margin: { left: margin, right: margin },
            didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
          });
-         currentY = (doc as any).lastAutoTable.finalY + 10;
+         currentY = (doc as any).lastAutoTable.finalY + 8; // Reduced space
 
 
          // --- Resistance Readings Section (4 columns) ---
-         if (currentY + 60 > pageHeight) { doc.addPage(); currentY = margin; } // Estimate height + title check
-         doc.setFontSize(14);
+         if (currentY + 50 > pageHeight) { doc.addPage(); currentY = margin; } // Estimate height check
+         doc.setFontSize(12); // Section title
          doc.setFont(undefined, 'bold');
          doc.text('Lecturas de Resistencia de Aislamiento', margin, currentY); // Title without units here
-         currentY += 6;
-         doc.setFontSize(10);
+         currentY += 5; // Reduced space
+         doc.setFontSize(9); // Smaller table font
          doc.setFont(undefined, 'normal');
 
          // Prepare body data for the 4-column layout
@@ -302,8 +302,8 @@ export function InsulationResistanceAnalyzer() {
            head: [['Tiempo', 'Resistencia (G-OHM)', 'Tiempo', 'Resistencia (G-OHM)']], // Updated Header
            body: readingsBody4Col,
            theme: 'grid',
-           styles: { fontSize: 9, cellPadding: 1.5, halign: 'center' },
-           headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center' },
+           styles: { fontSize: 8, cellPadding: 1, halign: 'center' }, // Smaller font, reduced padding
+           headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 8.5 }, // Smaller head font
            columnStyles: {
              0: { cellWidth: 'auto', halign: 'left' },
              1: { cellWidth: 'auto', halign: 'right' },
@@ -313,34 +313,34 @@ export function InsulationResistanceAnalyzer() {
            margin: { left: margin, right: margin },
            didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
          });
-         currentY = (doc as any).lastAutoTable.finalY + 10;
+         currentY = (doc as any).lastAutoTable.finalY + 8; // Reduced space
 
 
         // --- Results Section (Indices, Chart, Reference Tables) ---
         // Layout similar to the HTML view (Chart left, Indices/Reference right)
         const resultsStartY = currentY;
         const leftColX = margin;
-        const rightColX = margin + contentWidth / 2 + 5; // Add some gap
-        const colWidth = contentWidth / 2 - 5; // Adjust col width for gap
+        const rightColX = margin + contentWidth / 2 + 4; // Reduced gap
+        const colWidth = contentWidth / 2 - 4; // Adjust col width for gap
 
         // --- Column 1: Chart ---
         const chartElement = innerChartRef.current; // Use the inner chart ref here
         let leftColEndY = resultsStartY;
         if (chartElement && chartData.length > 0) {
             const chartTitleY = currentY;
-            if (chartTitleY + 70 > pageHeight) { doc.addPage(); currentY = margin; } // Estimate height + title
-            doc.setFontSize(12);
+            if (chartTitleY + 60 > pageHeight) { doc.addPage(); currentY = margin; } // Estimate height + title
+            doc.setFontSize(11); // Smaller chart title
             doc.setFont(undefined, 'bold');
             doc.text('Gráfico Resistencia vs. Tiempo', leftColX, currentY);
-            currentY += 6;
-            doc.setFontSize(10);
+            currentY += 5; // Reduced space
+            doc.setFontSize(9); // Reset font size
             doc.setFont(undefined, 'normal');
 
             try {
                 // Ensure the chart is rendered before capturing
                 await new Promise(resolve => setTimeout(resolve, 300)); // Small delay might be needed
                 const canvas = await html2canvas(chartElement, {
-                    scale: 2, // Increase scale for better resolution
+                    scale: 1.8, // Slightly reduced scale for resolution vs size
                     backgroundColor: '#ffffff', // Ensure background is white for PDF
                      logging: false, // Reduce console noise
                      useCORS: true // If using external resources in chart (unlikely here)
@@ -350,23 +350,24 @@ export function InsulationResistanceAnalyzer() {
                 const pdfChartWidth = colWidth;
                 const pdfChartHeight = (imgProps.height * pdfChartWidth) / imgProps.width;
 
-                if (currentY + pdfChartHeight > pageHeight) { // Check height again after getting dimensions
+                if (currentY + pdfChartHeight > pageHeight - 30) { // Check height against page end, leave room for potential signatures
                   doc.addPage();
                   currentY = margin;
                   // Redraw title if needed on new page
-                  doc.setFontSize(12); doc.setFont(undefined, 'bold');
-                  doc.text('Gráfico Resistencia vs. Tiempo', leftColX, currentY); currentY += 6;
-                  doc.setFontSize(10); doc.setFont(undefined, 'normal');
+                  doc.setFontSize(11); doc.setFont(undefined, 'bold');
+                  doc.text('Gráfico Resistencia vs. Tiempo', leftColX, currentY); currentY += 5;
+                  doc.setFontSize(9); doc.setFont(undefined, 'normal');
                 }
 
                 doc.addImage(imgData, 'PNG', leftColX, currentY, pdfChartWidth, pdfChartHeight);
-                currentY += pdfChartHeight + 5; // Add some padding below chart
+                currentY += pdfChartHeight + 3; // Reduced padding below chart
             } catch (error) {
                 console.error("Error generando imagen del gráfico:", error);
                  if (currentY + 10 > pageHeight) { doc.addPage(); currentY = margin; }
                  doc.setTextColor(255, 0, 0); // Red for error
+                 doc.setFontSize(9);
                  doc.text('Error generando imagen del gráfico.', leftColX, currentY);
-                 currentY += 10;
+                 currentY += 8;
                  doc.setTextColor(0, 0, 0); // Reset color
                  toast({
                     title: "Error de Gráfico",
@@ -376,8 +377,9 @@ export function InsulationResistanceAnalyzer() {
             }
              leftColEndY = currentY;
         } else {
-            if (currentY + 10 > pageHeight) { doc.addPage(); currentY = margin; }
-            doc.text('Gráfico no disponible.', leftColX, currentY); currentY += 10;
+            if (currentY + 8 > pageHeight) { doc.addPage(); currentY = margin; }
+             doc.setFontSize(9);
+            doc.text('Gráfico no disponible.', leftColX, currentY); currentY += 8;
             leftColEndY = currentY;
         }
 
@@ -388,16 +390,16 @@ export function InsulationResistanceAnalyzer() {
 
         // Indices Results Card (Mimicking UI)
         if (polarizationIndex !== null || dielectricAbsorptionRatio !== null) {
-             if (currentY + 45 > pageHeight) { doc.addPage(); currentY = margin; } // Estimate height + title + content
+             if (currentY + 35 > pageHeight) { doc.addPage(); currentY = margin; } // Estimate height
 
              // Card Box (optional visual cue)
              doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
-             doc.roundedRect(rightColX - 1, currentY - 1, colWidth + 2, 42, 2, 2, 'S'); // Draw border around the "card"
-             currentY += 2; // Padding top
+             doc.roundedRect(rightColX - 1, currentY - 1, colWidth + 2, 32, 1.5, 1.5, 'S'); // Smaller rounding, adjusted height
+             currentY += 1.5; // Padding top
 
-             doc.setFontSize(12); doc.setFont(undefined, 'bold');
-             doc.text('Índices Calculados', rightColX + 3, currentY + 4); currentY += 8; // Title with padding
-             doc.setFontSize(10); doc.setFont(undefined, 'normal');
+             doc.setFontSize(11); doc.setFont(undefined, 'bold');
+             doc.text('Índices Calculados', rightColX + 2, currentY + 3); currentY += 6; // Title with padding
+             doc.setFontSize(9); doc.setFont(undefined, 'normal'); // Smaller base font
 
              const piValue = polarizationIndex !== null ? (isFinite(polarizationIndex) ? polarizationIndex.toFixed(2) : '∞') : 'N/D';
              const piCondition = polarizationIndex !== null ? getCondition(polarizationIndex, 'PI') : 'N/D';
@@ -406,17 +408,17 @@ export function InsulationResistanceAnalyzer() {
 
              // Draw Index Row Function
              const drawIndexRow = (label: string, value: string, condition: string, y: number): number => {
-                const labelX = rightColX + 3; // Left padding
-                const valueX = rightColX + colWidth - 30; // Position value right aligned before badge
-                const badgeX = rightColX + colWidth - 28; // Badge start position (right padding)
-                const badgeWidth = 25; // Fixed badge width
-                const badgeHeight = 6;
+                const labelX = rightColX + 2; // Left padding
+                const valueX = rightColX + colWidth - 26; // Position value right aligned before badge
+                const badgeX = rightColX + colWidth - 24; // Badge start position (right padding)
+                const badgeWidth = 22; // Smaller badge width
+                const badgeHeight = 5; // Smaller badge height
 
-                doc.setFontSize(10);
+                doc.setFontSize(9);
                 doc.setFont(undefined, 'medium'); // Slightly bolder than normal
-                doc.text(label, labelX, y + 4); // Vertically center text
+                doc.text(label, labelX, y + 3); // Vertically center text
                 doc.setFont(undefined, 'bold'); // Bold value
-                doc.text(value, valueX, y + 4, { align: 'right' });
+                doc.text(value, valueX, y + 3, { align: 'right' });
 
                 // Badge Drawing
                 let fillColor: [number, number, number] = [220, 220, 220]; // Default outline/gray
@@ -430,41 +432,41 @@ export function InsulationResistanceAnalyzer() {
                 }
                 doc.setFillColor(fillColor[0], fillColor[1], fillColor[2]);
                 doc.setDrawColor(fillColor[0], fillColor[1], fillColor[2]); // Border same as fill
-                doc.roundedRect(badgeX, y, badgeWidth, badgeHeight, 2, 2, 'FD'); // Fill and draw rounded rect
+                doc.roundedRect(badgeX, y, badgeWidth, badgeHeight, 1.5, 1.5, 'FD'); // Smaller rounding
 
                 // Badge Text
-                doc.setFontSize(8);
+                doc.setFontSize(7); // Smaller badge text
                 doc.setFont(undefined, 'semibold'); // Semibold badge text
                 doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-                doc.text(condition, badgeX + badgeWidth / 2, y + badgeHeight / 2 + 1, { align: 'center', baseline: 'middle' });
+                doc.text(condition, badgeX + badgeWidth / 2, y + badgeHeight / 2 + 0.5, { align: 'center', baseline: 'middle' });
                 doc.setTextColor(0, 0, 0); // Reset text color
 
-                return y + badgeHeight + 5; // Return next Y pos (add row padding)
+                return y + badgeHeight + 3; // Return next Y pos (reduced row padding)
              }
 
              currentY = drawIndexRow('Índice de Polarización (PI):', piValue, piCondition, currentY);
              currentY = drawIndexRow('Ratio Absorción Dieléctrica (DAR):', darValue, darCondition, currentY);
-             currentY += 5; // Add padding after indices "card"
+             currentY += 4; // Reduced padding after indices "card"
         }
 
         // Reference Tables Card (Mimicking UI)
-        if (currentY + 90 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for reference title + tables
+        if (currentY + 70 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for reference title + tables
 
         // Card Box (optional)
         const refCardStartY = currentY;
         doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
         // Calculate height later based on tables
 
-        currentY += 2; // Padding top
+        currentY += 1.5; // Padding top
 
-        doc.setFontSize(12); doc.setFont(undefined, 'bold');
-        doc.text('Valores de Referencia (IEEE Std 43-2013)', rightColX + 3, currentY + 4); currentY += 10; // Title with padding
-        doc.setFontSize(10); doc.setFont(undefined, 'normal');
+        doc.setFontSize(11); doc.setFont(undefined, 'bold');
+        doc.text('Valores de Referencia (IEEE Std 43-2013)', rightColX + 2, currentY + 3); currentY += 7; // Title with padding
+        doc.setFontSize(9); doc.setFont(undefined, 'normal'); // Base font size
 
         const tableConfig = {
           theme: 'grid' as const,
-          styles: { fontSize: 9, cellPadding: 1.5, halign: 'left' },
-          headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center' }, // Center header text
+          styles: { fontSize: 8, cellPadding: 1, halign: 'left' }, // Smaller font, reduced padding
+          headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 8.5 }, // Smaller head font
           tableWidth: colWidth,
           margin: { left: rightColX }, // Position table in the right column
           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
@@ -484,16 +486,16 @@ export function InsulationResistanceAnalyzer() {
           columnStyles: { 0: { halign: 'center' }, 1: { halign: 'left' } }, // Center first column
           // Add a caption below the table
           didDrawTable: (data) => {
-            doc.setFontSize(8);
+            doc.setFontSize(7); // Smaller caption
             doc.setTextColor(100, 100, 100); // Muted text color
-            doc.text("Referencia Índice de Polarización (PI)", rightColX + colWidth/2 , data.cursor.y + 4, { align: 'center' });
-            currentY = data.cursor.y + 8; // Update Y pos after caption
+            doc.text("Referencia Índice de Polarización (PI)", rightColX + colWidth/2 , data.cursor.y + 3, { align: 'center' });
+            currentY = data.cursor.y + 6; // Update Y pos after caption
           },
         });
-        currentY += 5; // Space between tables
+        // currentY += 3; // Reduced space between tables // Handled in didDrawTable
 
         // DAR Reference
-        if (currentY + 40 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for DAR table
+        if (currentY + 35 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for DAR table
         autoTable(doc, {
           startY: currentY,
           head: [['Valor DAR', 'Condición']],
@@ -506,40 +508,40 @@ export function InsulationResistanceAnalyzer() {
           ...tableConfig,
            columnStyles: { 0: { halign: 'center' }, 1: { halign: 'left' } }, // Center first column
            didDrawTable: (data) => {
-            doc.setFontSize(8);
+            doc.setFontSize(7); // Smaller caption
             doc.setTextColor(100, 100, 100); // Muted text color
-            doc.text("Referencia Ratio de Absorción Dieléctrica (DAR)", rightColX + colWidth/2, data.cursor.y + 4, { align: 'center' });
-            currentY = data.cursor.y + 8; // Update Y pos after caption
+            doc.text("Referencia Ratio de Absorción Dieléctrica (DAR)", rightColX + colWidth/2, data.cursor.y + 3, { align: 'center' });
+            currentY = data.cursor.y + 6; // Update Y pos after caption
           },
         });
 
         // Draw the reference card border now that we know the height
-        doc.roundedRect(rightColX - 1, refCardStartY - 1, colWidth + 2, currentY - refCardStartY + 2, 2, 2, 'S');
+        doc.roundedRect(rightColX - 1, refCardStartY - 1, colWidth + 2, currentY - refCardStartY + 1, 1.5, 1.5, 'S'); // Adjusted height, smaller rounding
 
-        rightColEndY = currentY + 5; // Update end Y for the right column
+        rightColEndY = currentY + 3; // Update end Y for the right column
 
 
         // --- Move Y to below the longest column before adding signatures ---
-        currentY = Math.max(leftColEndY, rightColEndY) + 15;
+        currentY = Math.max(leftColEndY, rightColEndY) + 10; // Reduced space before signatures
 
 
         // --- Signature Section ---
-        if (currentY + 30 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for signatures
-        doc.setFontSize(10);
+        if (currentY + 25 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for signatures
+        doc.setFontSize(9); // Smaller signature font
         const signatureY = currentY;
         const signatureXStart = margin;
         const signatureXEnd = pageWidth - margin;
-        const signatureLineLength = 60;
+        const signatureLineLength = 55; // Slightly shorter line
 
         // Tester Signature
         doc.text('Firma del Técnico:', signatureXStart, signatureY);
-        doc.line(signatureXStart, signatureY + 5, signatureXStart + signatureLineLength, signatureY + 5);
-        doc.text(formData.testerName, signatureXStart, signatureY + 10); // Add name below line
+        doc.line(signatureXStart, signatureY + 4, signatureXStart + signatureLineLength, signatureY + 4);
+        doc.text(formData.testerName, signatureXStart, signatureY + 8); // Add name below line
 
         // Supervisor Signature (Aligned Right)
         const supervisorXStart = signatureXEnd - signatureLineLength;
         doc.text('Firma del Supervisor:', supervisorXStart, signatureY);
-        doc.line(supervisorXStart, signatureY + 5, supervisorXStart + signatureLineLength, signatureY + 5);
+        doc.line(supervisorXStart, signatureY + 4, supervisorXStart + signatureLineLength, signatureY + 4);
 
 
          // Save the PDF
@@ -700,7 +702,7 @@ export function InsulationResistanceAnalyzer() {
                          <CardTitle className="text-lg text-primary">Resistencia vs. Tiempo</CardTitle>
                       </CardHeader>
                       {/* Move the ref to the direct parent of ResistanceChart for PDF capture */}
-                      <CardContent ref={innerChartRef} className="pr-6 pt-4">
+                      <CardContent ref={innerChartRef} className="pr-6 pt-4 min-h-[320px]"> {/* Set min-height */}
                          {chartData.length > 0 ? (
                              <ResistanceChart data={chartData} />
                           ) : (
