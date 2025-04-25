@@ -47,10 +47,11 @@ export default function RootLayout({
            <div className="container flex h-14 items-center">
                <Menubar className="border-none shadow-none rounded-none bg-transparent">
                    <MenubarMenu>
-                       <MenubarTrigger>Documentación</MenubarTrigger>
-                       {/* <MenubarContent>
-                         <MenubarItem>...</MenubarItem> Add documentation links here
-                       </MenubarContent> */}
+                       {/* Wrap MenubarTrigger in Link */}
+                       <Link href="/documentation" passHref legacyBehavior>
+                         <MenubarTrigger>Documentación</MenubarTrigger>
+                       </Link>
+                       {/* No content needed as it links directly */}
                    </MenubarMenu>
                    <MenubarMenu>
                        <MenubarTrigger>Herramientas</MenubarTrigger>
@@ -58,7 +59,8 @@ export default function RootLayout({
                          <MenubarSub>
                            <MenubarSubTrigger>Pruebas Eléctricas</MenubarSubTrigger>
                            <MenubarSubContent>
-                             <MenubarItem>
+                             {/* Link remains inside MenubarItem */}
+                             <MenubarItem asChild>
                                <Link href="/" className="w-full">
                                    Analizador Resistencia Aislamiento
                                </Link>
