@@ -65,8 +65,21 @@ export default function RootLayout({
                                    Analizador Resistencia Aislamiento
                                </Link>
                              </MenubarItem>
-                             {/* Add more tools here */}
+                             {/* Add more electrical tools here */}
                            </MenubarSubContent>
+                         </MenubarSub>
+                         <MenubarSub>
+                            <MenubarSubTrigger>Pruebas Mecanicas</MenubarSubTrigger>
+                            <MenubarSubContent>
+                               {/* Add mechanical tools links here, e.g.:
+                               <MenubarItem asChild>
+                                 <Link href="/tools/mechanical/tool1" className="w-full">
+                                     Herramienta Mecánica 1
+                                 </Link>
+                               </MenubarItem>
+                               */}
+                                <MenubarItem disabled>Próximamente...</MenubarItem>
+                            </MenubarSubContent>
                          </MenubarSub>
                          {/* Add more tool categories here */}
                        </MenubarContent>
