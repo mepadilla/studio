@@ -109,6 +109,7 @@ export function InsulationResistanceAnalyzer() {
   const [isLoadingPdf, setIsLoadingPdf] = React.useState(false);
   const [showResults, setShowResults] = React.useState(false); // State to control results visibility
   const resultsRef = React.useRef<HTMLDivElement>(null); // Ref for scrolling
+  const chartRef = React.useRef<HTMLDivElement>(null); // Ref for the chart container used in PDF
 
   const { toast } = useToast(); // Initialize toast
 
@@ -166,10 +167,10 @@ export function InsulationResistanceAnalyzer() {
             const resistanceValue = Number(readings[`t${point.value}`]);
             return {
                 time: point.value / 60, // Convert seconds to minutes
-                resistance: isNaN(resistanceValue) ? 0 : resistanceValue, // Use 0 or null for invalid numbers? Let's use 0 for now.
+                resistance: isNaN(resistanceValue) ? 0 : resistanceValue, // Use 0 for now if not a number
             };
        })
-      .filter(point => !isNaN(point.resistance)); // Filter out any potential NaN if needed, though coercion handles most
+      .filter(point => !isNaN(point.resistance)); // Filter out any potential NaN
 
     setChartData(data);
     setShowResults(true); // Show results section
@@ -251,26 +252,57 @@ export function InsulationResistanceAnalyzer() {
          currentY = (doc as any).lastAutoTable.finalY + 10;
 
 
-        // --- Resistance Readings Section ---
-        if (currentY + 80 > pageHeight) { doc.addPage(); currentY = margin; } // New page check
-        doc.setFontSize(14);
-        doc.setFont(undefined, 'bold');
-        doc.text('Lecturas de Resistencia de Aislamiento (GΩ)', margin, currentY);
-        currentY += 6;
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        const readingsBody = timePoints.map((point) => [
-           point.label,
-           `${formData.readings[`t${point.value}`]}`,
-         ]);
-        autoTable(doc, {
+         // --- Resistance Readings Section (4 columns) ---
+         if (currentY + 60 > pageHeight) { doc.addPage(); currentY = margin; } // Estimate height + title check
+         doc.setFontSize(14);
+         doc.setFont(undefined, 'bold');
+         doc.text('Lecturas de Resistencia de Aislamiento (GΩ)', margin, currentY);
+         currentY += 6;
+         doc.setFontSize(10);
+         doc.setFont(undefined, 'normal');
+
+         // Prepare body data for the 4-column layout
+         const readingsBody4Col: (string | number)[][] = [];
+         const numRows = Math.ceil(timePoints.length / 2); // 13 points / 2 columns = 7 rows
+
+         for (let i = 0; i < numRows; i++) {
+           const row: (string | number)[] = [];
+           // Column 1 & 2 (index i)
+           const point1 = timePoints[i];
+           if (point1) {
+             row.push(point1.label);
+             row.push(formData.readings[`t${point1.value}`] ?? 'N/D');
+           } else {
+             row.push(''); // Empty cell if no data
+             row.push(''); // Empty cell if no data
+           }
+
+           // Column 3 & 4 (index i + numRows)
+           const point2Index = i + numRows;
+           const point2 = timePoints[point2Index];
+           if (point2) {
+              row.push(point2.label);
+              row.push(formData.readings[`t${point2.value}`] ?? 'N/D');
+           } else {
+              row.push(''); // Empty cell if no data
+              row.push(''); // Empty cell if no data
+           }
+           readingsBody4Col.push(row);
+         }
+
+         autoTable(doc, {
            startY: currentY,
-           head: [['Tiempo', 'Resistencia (GΩ)']],
-           body: readingsBody,
+           head: [['Tiempo', 'Resistencia (GΩ)', 'Tiempo', 'Resistencia (GΩ)']],
+           body: readingsBody4Col,
            theme: 'grid',
            styles: { fontSize: 9, cellPadding: 1.5, halign: 'center' },
            headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold' },
-           columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: contentWidth - 30 } },
+           columnStyles: {
+             0: { cellWidth: 'auto', halign: 'left' },
+             1: { cellWidth: 'auto', halign: 'right' },
+             2: { cellWidth: 'auto', halign: 'left' },
+             3: { cellWidth: 'auto', halign: 'right' },
+           },
            margin: { left: margin, right: margin },
            didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
          });
@@ -278,14 +310,16 @@ export function InsulationResistanceAnalyzer() {
 
 
         // --- Results Section (Indices, Chart, Reference Tables) ---
+        // Layout similar to the HTML view (Chart left, Indices/Reference right)
         const resultsStartY = currentY;
         const leftColX = margin;
         const rightColX = margin + contentWidth / 2 + 5; // Add some gap
         const colWidth = contentWidth / 2 - 5; // Adjust col width for gap
 
         // --- Column 1: Chart ---
-        const chartElement = document.getElementById('resistance-chart-container-pdf'); // Use a dedicated container
-        if (chartElement) {
+        const chartElement = chartRef.current; // Use the ref here
+        let leftColEndY = resultsStartY;
+        if (chartElement && chartData.length > 0) {
             const chartTitleY = currentY;
             if (chartTitleY + 70 > pageHeight) { doc.addPage(); currentY = margin; } // Estimate height + title
             doc.setFontSize(12);
@@ -333,20 +367,29 @@ export function InsulationResistanceAnalyzer() {
                     variant: "destructive",
                  });
             }
+             leftColEndY = currentY;
         } else {
-             if (currentY + 10 > pageHeight) { doc.addPage(); currentY = margin; }
-             doc.text('Elemento del gráfico no encontrado.', leftColX, currentY); currentY += 10;
+            if (currentY + 10 > pageHeight) { doc.addPage(); currentY = margin; }
+            doc.text('Gráfico no disponible.', leftColX, currentY); currentY += 10;
+            leftColEndY = currentY;
         }
-        const leftColEndY = currentY;
 
 
         // --- Column 2: Indices & Reference ---
         currentY = resultsStartY; // Reset Y to start of results section for the right column
-        // Indices Results
+        let rightColEndY = resultsStartY;
+
+        // Indices Results Card (Mimicking UI)
         if (polarizationIndex !== null || dielectricAbsorptionRatio !== null) {
-             if (currentY + 40 > pageHeight) { doc.addPage(); currentY = margin; } // Estimate height + title
+             if (currentY + 45 > pageHeight) { doc.addPage(); currentY = margin; } // Estimate height + title + content
+
+             // Card Box (optional visual cue)
+             doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
+             doc.roundedRect(rightColX - 1, currentY - 1, colWidth + 2, 42, 2, 2, 'S'); // Draw border around the "card"
+             currentY += 2; // Padding top
+
              doc.setFontSize(12); doc.setFont(undefined, 'bold');
-             doc.text('Índices Calculados', rightColX, currentY); currentY += 6;
+             doc.text('Índices Calculados', rightColX + 3, currentY + 4); currentY += 8; // Title with padding
              doc.setFontSize(10); doc.setFont(undefined, 'normal');
 
              const piValue = polarizationIndex !== null ? (isFinite(polarizationIndex) ? polarizationIndex.toFixed(2) : '∞') : 'N/D';
@@ -354,101 +397,118 @@ export function InsulationResistanceAnalyzer() {
              const darValue = dielectricAbsorptionRatio !== null ? (isFinite(dielectricAbsorptionRatio) ? dielectricAbsorptionRatio.toFixed(2) : '∞') : 'N/D';
              const darCondition = dielectricAbsorptionRatio !== null ? getCondition(dielectricAbsorptionRatio, 'DAR') : 'N/D';
 
-            // Custom drawing for indices to mimic badge style
-             const drawIndex = (label: string, value: string, condition: string, y: number): number => {
-                 const labelX = rightColX;
-                 const valueX = rightColX + colWidth - 35; // Position value right aligned before badge
-                 const badgeX = rightColX + colWidth - 25; // Badge start position
-                 const badgeWidth = 25;
-                 const badgeHeight = 6;
+             // Draw Index Row Function
+             const drawIndexRow = (label: string, value: string, condition: string, y: number): number => {
+                const labelX = rightColX + 3; // Left padding
+                const valueX = rightColX + colWidth - 30; // Position value right aligned before badge
+                const badgeX = rightColX + colWidth - 28; // Badge start position (right padding)
+                const badgeWidth = 25; // Fixed badge width
+                const badgeHeight = 6;
 
-                 doc.setFontSize(10);
-                 doc.setFont(undefined, 'bold');
-                 doc.text(label, labelX, y + 4); // Vertically center text a bit
-                 doc.setFont(undefined, 'normal');
-                 doc.text(value, valueX, y + 4, { align: 'right' });
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'medium'); // Slightly bolder than normal
+                doc.text(label, labelX, y + 4); // Vertically center text
+                doc.setFont(undefined, 'bold'); // Bold value
+                doc.text(value, valueX, y + 4, { align: 'right' });
 
-                 // Draw Badge Background
-                 let fillColor: [number, number, number] = [220, 220, 220]; // Default outline/gray
-                 let textColor: [number, number, number] = [50, 50, 50]; // Default dark text
-                 switch (condition.toLowerCase()) {
-                     case 'excelente':
-                     case 'bueno':
-                         fillColor = [0, 150, 136]; textColor = [255, 255, 255]; // Teal (Accent) - Approximate
-                         break;
-                     case 'cuestionable':
-                         fillColor = [240, 240, 240]; textColor = [50, 50, 50]; // Secondary/Light Gray
-                         break;
-                     case 'malo':
-                     case 'peligroso':
-                         fillColor = [220, 53, 69]; textColor = [255, 255, 255]; // Destructive/Red
-                         break;
-                 }
-                 doc.setFillColor(fillColor[0], fillColor[1], fillColor[2]);
-                 doc.setDrawColor(fillColor[0], fillColor[1], fillColor[2]); // Border same as fill
-                 doc.roundedRect(badgeX, y, badgeWidth, badgeHeight, 2, 2, 'FD'); // Fill and draw rounded rect
+                // Badge Drawing
+                let fillColor: [number, number, number] = [220, 220, 220]; // Default outline/gray
+                let textColor: [number, number, number] = [50, 50, 50]; // Default dark text
+                switch (condition.toLowerCase()) {
+                   case 'excelente': fillColor = [26, 35, 126]; textColor = [255, 255, 255]; break; // Primary (Dark Blue) approx
+                   case 'bueno': fillColor = [0, 150, 136]; textColor = [255, 255, 255]; break; // Accent (Teal) approx
+                   case 'cuestionable': fillColor = [224, 224, 224]; textColor = [50, 50, 50]; break; // Secondary (Light Gray) approx
+                   case 'malo':
+                   case 'peligroso': fillColor = [220, 53, 69]; textColor = [255, 255, 255]; break; // Destructive (Red) approx
+                }
+                doc.setFillColor(fillColor[0], fillColor[1], fillColor[2]);
+                doc.setDrawColor(fillColor[0], fillColor[1], fillColor[2]); // Border same as fill
+                doc.roundedRect(badgeX, y, badgeWidth, badgeHeight, 2, 2, 'FD'); // Fill and draw rounded rect
 
-                 // Draw Badge Text
-                 doc.setFontSize(8);
-                 doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-                 doc.text(condition, badgeX + badgeWidth / 2, y + badgeHeight / 2 + 1, { align: 'center', baseline: 'middle' });
-                 doc.setTextColor(0, 0, 0); // Reset text color
+                // Badge Text
+                doc.setFontSize(8);
+                doc.setFont(undefined, 'semibold'); // Semibold badge text
+                doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+                doc.text(condition, badgeX + badgeWidth / 2, y + badgeHeight / 2 + 1, { align: 'center', baseline: 'middle' });
+                doc.setTextColor(0, 0, 0); // Reset text color
 
-                 return y + badgeHeight + 4; // Return next Y pos
+                return y + badgeHeight + 5; // Return next Y pos (add row padding)
              }
 
-             currentY = drawIndex('Índice de Polarización (PI):', piValue, piCondition, currentY);
-             currentY = drawIndex('Ratio Absorción Dieléctrica (DAR):', darValue, darCondition, currentY);
-             currentY += 5; // Add padding after indices
-
+             currentY = drawIndexRow('Índice de Polarización (PI):', piValue, piCondition, currentY);
+             currentY = drawIndexRow('Ratio Absorción Dieléctrica (DAR):', darValue, darCondition, currentY);
+             currentY += 5; // Add padding after indices "card"
         }
 
-        // Reference Tables
-         if (currentY + 60 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for reference title + tables
-         doc.setFontSize(12); doc.setFont(undefined, 'bold');
-         doc.text('Valores de Referencia (IEEE Std 43-2013)', rightColX, currentY); currentY += 6;
-         doc.setFontSize(10); doc.setFont(undefined, 'normal');
+        // Reference Tables Card (Mimicking UI)
+        if (currentY + 90 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for reference title + tables
 
-         // PI Reference
-         autoTable(doc, {
-           startY: currentY,
-           head: [['Valor PI', 'Condición']],
-           body: [
-             ['< 1.0', 'Peligroso'],
-             ['1.0 - 2.0', 'Cuestionable'],
-             ['2.0 - 4.0', 'Bueno'],
-             ['> 4.0', 'Excelente'],
-           ],
-           theme: 'grid',
-           styles: { fontSize: 9, cellPadding: 1.5 },
-           headStyles: { fillColor: [220, 220, 220], textColor: [80, 80, 80], fontStyle: 'bold' }, // Muted Header
-           tableWidth: colWidth,
-           margin: { left: rightColX }, // Position table in the right column
-           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
-         });
-         currentY = (doc as any).lastAutoTable.finalY + 5;
+        // Card Box (optional)
+        const refCardStartY = currentY;
+        doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
+        // Calculate height later based on tables
+
+        currentY += 2; // Padding top
+
+        doc.setFontSize(12); doc.setFont(undefined, 'bold');
+        doc.text('Valores de Referencia (IEEE Std 43-2013)', rightColX + 3, currentY + 4); currentY += 10; // Title with padding
+        doc.setFontSize(10); doc.setFont(undefined, 'normal');
+
+        const tableConfig = {
+          theme: 'grid' as const,
+          styles: { fontSize: 9, cellPadding: 1.5, halign: 'left' },
+          headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold' }, // Light Gray Header
+          tableWidth: colWidth,
+          margin: { left: rightColX }, // Position table in the right column
+          didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
+        };
+
+        // PI Reference
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Valor PI', 'Condición']],
+          body: [
+            ['< 1.0', 'Peligroso'],
+            ['1.0 - 2.0', 'Cuestionable'],
+            ['2.0 - 4.0', 'Bueno'],
+            ['> 4.0', 'Excelente'],
+          ],
+          ...tableConfig,
+          // Add a caption below the table
+          didDrawTable: (data) => {
+            doc.setFontSize(8);
+            doc.setTextColor(100, 100, 100); // Muted text color
+            doc.text("Referencia Índice de Polarización (PI)", rightColX, data.cursor.y + 4);
+            currentY = data.cursor.y + 8; // Update Y pos after caption
+          },
+        });
+        currentY += 5; // Space between tables
 
         // DAR Reference
-         if (currentY + 40 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for DAR table
-         autoTable(doc, {
-           startY: currentY,
-           head: [['Valor DAR', 'Condición']],
-           body: [
-             ['< 1.0', 'Malo'],
-             ['1.0 - 1.25', 'Cuestionable'],
-             ['1.25 - 1.6', 'Bueno'],
-             ['> 1.6', 'Excelente'],
-           ],
-           theme: 'grid',
-           styles: { fontSize: 9, cellPadding: 1.5 },
-           headStyles: { fillColor: [220, 220, 220], textColor: [80, 80, 80], fontStyle: 'bold' },
-           tableWidth: colWidth,
-           margin: { left: rightColX }, // Position table in the right column
-           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
-         });
-         currentY = (doc as any).lastAutoTable.finalY + 5;
+        if (currentY + 40 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for DAR table
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Valor DAR', 'Condición']],
+          body: [
+            ['< 1.0', 'Malo'],
+            ['1.0 - 1.25', 'Cuestionable'],
+            ['1.25 - 1.6', 'Bueno'],
+            ['> 1.6', 'Excelente'],
+          ],
+          ...tableConfig,
+           didDrawTable: (data) => {
+            doc.setFontSize(8);
+            doc.setTextColor(100, 100, 100); // Muted text color
+            doc.text("Referencia Ratio de Absorción Dieléctrica (DAR)", rightColX, data.cursor.y + 4);
+            currentY = data.cursor.y + 8; // Update Y pos after caption
+          },
+        });
 
-        const rightColEndY = currentY;
+        // Draw the reference card border now that we know the height
+        doc.roundedRect(rightColX - 1, refCardStartY - 1, colWidth + 2, currentY - refCardStartY + 2, 2, 2, 'S');
+
+        rightColEndY = currentY + 5; // Update end Y for the right column
+
 
         // --- Move Y to below the longest column before adding signatures ---
         currentY = Math.max(leftColEndY, rightColEndY) + 15;
@@ -622,14 +682,20 @@ export function InsulationResistanceAnalyzer() {
             <Separator className="my-6" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                {/* Chart Card - Visible on screen */}
-               {/* Add a dedicated container for PDF rendering */}
-               <div id="resistance-chart-container-pdf" className="md:col-span-1">
+               {/* Container for chart, use ref for PDF generation */}
+               <div ref={chartRef} className="md:col-span-1">
                   <Card className="bg-card h-full">
                       <CardHeader>
                          <CardTitle className="text-lg">Resistencia vs. Tiempo</CardTitle>
                       </CardHeader>
                       <CardContent>
-                         <ResistanceChart data={chartData} />
+                         {chartData.length > 0 ? (
+                             <ResistanceChart data={chartData} />
+                          ) : (
+                             <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                                 Datos insuficientes para mostrar el gráfico.
+                             </div>
+                          )}
                       </CardContent>
                    </Card>
                 </div>
@@ -652,3 +718,5 @@ export function InsulationResistanceAnalyzer() {
    </>
   );
 }
+
+    
