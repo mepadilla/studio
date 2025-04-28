@@ -381,7 +381,7 @@ export function InsulationResistanceAnalyzer() {
                     variant: "destructive",
                  });
             }
-             // leftColEndY = currentY; // Removed: We determine leftColEndY after formulas and note
+
 
              // --- Formulas Section ---
              if (currentY + 20 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for formulas
@@ -403,9 +403,9 @@ export function InsulationResistanceAnalyzer() {
                 windowWidth: 300 // Smaller arbitrary width for rendering
              };
 
-            // Adjust font size - (original * 1.2)
-            const mainFontSize = 18 * 1.2; // Approx 21.6px
-            const fractionFontSize = 16 * 1.2; // Approx 19.2px
+            // Adjust font size - (original * 1.2) * 1.2
+            const mainFontSize = 18 * 1.2 * 1.2; // Approx 25.9px
+            const fractionFontSize = 16 * 1.2 * 1.2; // Approx 23px
 
              // PI Formula (Left Side)
              const piHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: ${mainFontSize}px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
@@ -416,7 +416,7 @@ export function InsulationResistanceAnalyzer() {
                 </span>
              </div>`;
              await doc.html(piHtml, { ...baseFormulaOptions, x: leftColX });
-             let piFormulaHeight = 21.6; // Estimate height based on adjusted font size
+             let piFormulaHeight = mainFontSize * 1.2; // Estimate height based on adjusted font size
 
              // DAR Formula (Right Side)
              const darHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: ${mainFontSize}px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
@@ -428,34 +428,39 @@ export function InsulationResistanceAnalyzer() {
              </div>`;
               // Position DAR formula next to PI formula
               await doc.html(darHtml, { ...baseFormulaOptions, x: leftColX + formulaMaxWidth + 4 }); // Add gap (4mm)
-              let darFormulaHeight = 21.6; // Estimate height based on adjusted font size
+              let darFormulaHeight = mainFontSize * 1.2; // Estimate height based on adjusted font size
 
              // Update currentY based on the taller formula
              currentY += Math.max(piFormulaHeight, darFormulaHeight) + 3; // Add padding below formulas
 
-              // --- Descriptive Note Section ---
-             if (currentY + 15 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for note
-             doc.setFontSize(8); // Smaller font for the note
-             doc.setFont(undefined, 'italic'); // Italicize the note
-             doc.setTextColor(100, 100, 100); // Muted text color
-             const noteText1 = "El Índice de Polarización (PI) y el Ratio de Absorción Dieléctrica (DAR) evalúan la calidad del aislamiento eléctrico. El PI mide el aumento de la resistencia con el tiempo, mientras que el DAR compara la absorción inicial de corriente con la posterior. Valores altos indican un aislamiento en buen estado y seco, crucial para prevenir fallas eléctricas.";
-             const splitNote1 = doc.splitTextToSize(noteText1, colWidth); // Wrap text to fit left column width
-             doc.text(splitNote1, leftColX, currentY);
-             currentY += (splitNote1.length * 3.5) + 3; // Adjust Y based on wrapped lines, add padding
+              // --- Descriptive Notes Section (inside a box) ---
+              const notesStartY = currentY; // Store Y before notes
+              if (notesStartY + 25 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for notes + box
 
-             // --- Second Descriptive Note Section ---
-             if (currentY + 15 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for second note
-             // Maintain same styling as first note
-             const noteText2 = "Para aislamientos con una resistencia significativamente elevada, los valores de PI y DAR pueden ser cercanos a 1. En estos casos, la alta resistencia constante es el principal indicador de un aislamiento en buen estado.";
-             const splitNote2 = doc.splitTextToSize(noteText2, colWidth); // Wrap text
-             doc.text(splitNote2, leftColX, currentY);
-             currentY += (splitNote2.length * 3.5) + 3; // Adjust Y based on wrapped lines, add padding
+              doc.setFontSize(8); // Smaller font for the note
+              doc.setFont(undefined, 'italic'); // Italicize the note
+              doc.setTextColor(100, 100, 100); // Muted text color
 
+              // First Note
+              const noteText1 = "El Índice de Polarización (PI) y el Ratio de Absorción Dieléctrica (DAR) evalúan la calidad del aislamiento eléctrico. El PI mide el aumento de la resistencia con el tiempo, mientras que el DAR compara la absorción inicial de corriente con la posterior. Valores altos indican un aislamiento en buen estado y seco, crucial para prevenir fallas eléctricas.";
+              const splitNote1 = doc.splitTextToSize(noteText1, colWidth - 4); // Subtract padding from width
+              doc.text(splitNote1, leftColX + 2, currentY + 4); // Add x padding
+              currentY += (splitNote1.length * 3.5) + 2; // Adjust Y, less space after note
 
-             doc.setFont(undefined, 'normal'); // Reset font style
-             doc.setTextColor(0, 0, 0); // Reset text color
+              // Second Note
+              const noteText2 = "Para aislamientos con una resistencia significativamente elevada, los valores de PI y DAR pueden ser cercanos a 1. En estos casos, la alta resistencia constante es el principal indicador de un aislamiento en buen estado.";
+              const splitNote2 = doc.splitTextToSize(noteText2, colWidth - 4); // Subtract padding from width
+              doc.text(splitNote2, leftColX + 2, currentY + 2); // Add x padding, adjusted Y
+              currentY += (splitNote2.length * 3.5) + 4; // Adjust Y, add bottom padding
 
-             leftColEndY = currentY; // Update the end Y of the left column
+              // Draw the rounded rectangle around the notes
+              doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
+              doc.roundedRect(leftColX, notesStartY, colWidth, currentY - notesStartY, 1.5, 1.5, 'S'); // Draw the box
+
+              doc.setFont(undefined, 'normal'); // Reset font style
+              doc.setTextColor(0, 0, 0); // Reset text color
+
+              leftColEndY = currentY; // Update the end Y of the left column
 
         } else {
             if (currentY + 8 > pageHeight) { doc.addPage(); currentY = margin; }
@@ -574,10 +579,9 @@ export function InsulationResistanceAnalyzer() {
             currentY = data.cursor.y + 6; // Update Y pos after caption
           },
         });
-        // currentY += 3; // Reduced space between tables // Handled in didDrawTable
 
         // DAR Reference
-         currentY += 5; // Add vertical space between reference tables
+        currentY += 5; // Add vertical space between reference tables
         if (currentY + 35 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for DAR table
         autoTable(doc, {
           startY: currentY,
