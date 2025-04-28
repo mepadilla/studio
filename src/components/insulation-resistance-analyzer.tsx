@@ -383,7 +383,7 @@ export function InsulationResistanceAnalyzer() {
              doc.setFont(undefined, 'bold');
              doc.text('Fórmulas Utilizadas', leftColX, currentY);
              currentY += 5; // Space after title
-             doc.setFontSize(12); // Doubled font size for formulas
+             doc.setFontSize(9); // Reset font size to base
              doc.setFont(undefined, 'normal');
 
              // Calculate available width for each formula
@@ -397,30 +397,32 @@ export function InsulationResistanceAnalyzer() {
                 windowWidth: 300 // Smaller arbitrary width for rendering
              };
 
+            // Adjust font size - 18px (original) * 1.2 = 21.6px, Fraction parts 16px * 1.2 = 19.2px
+             const mainFontSize = 21.6;
+             const fractionFontSize = 19.2;
+
              // PI Formula (Left Side)
-             // Increased main font-size to 18px (was 12), fraction parts to 16px (was 11)
-             const piHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 18px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
+             const piHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: ${mainFontSize}px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
                 <b>PI = </b>
                 <span style="display: inline-block; vertical-align: middle; text-align: center; margin: 0 0.1em;">
-                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px; font-size: 16px;">Resistencia @ 10 min</span>
-                    <span style="display: block; padding-top: 1px; font-size: 16px;">Resistencia @ 1 min</span>
+                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px; font-size: ${fractionFontSize}px;">Resistencia @ 10 min</span>
+                    <span style="display: block; padding-top: 1px; font-size: ${fractionFontSize}px;">Resistencia @ 1 min</span>
                 </span>
              </div>`;
              await doc.html(piHtml, { ...baseFormulaOptions, x: leftColX });
-             let piFormulaHeight = 15; // Increased estimate height
+             let piFormulaHeight = 18; // Estimate height based on adjusted font size
 
              // DAR Formula (Right Side)
-             // Increased main font-size to 18px (was 12), fraction parts to 16px (was 11)
-             const darHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 18px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
+             const darHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: ${mainFontSize}px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
                 <b>DAR = </b>
                 <span style="display: inline-block; vertical-align: middle; text-align: center; margin: 0 0.1em;">
-                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px; font-size: 16px;">Resistencia @ 1 min</span>
-                    <span style="display: block; padding-top: 1px; font-size: 16px;">Resistencia @ 30 seg</span>
+                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px; font-size: ${fractionFontSize}px;">Resistencia @ 1 min</span>
+                    <span style="display: block; padding-top: 1px; font-size: ${fractionFontSize}px;">Resistencia @ 30 seg</span>
                  </span>
              </div>`;
               // Position DAR formula next to PI formula
               await doc.html(darHtml, { ...baseFormulaOptions, x: leftColX + formulaMaxWidth + 4 }); // Add gap (4mm)
-              let darFormulaHeight = 15; // Increased estimate height
+              let darFormulaHeight = 18; // Estimate height based on adjusted font size
 
              // Update currentY based on the taller formula
              currentY += Math.max(piFormulaHeight, darFormulaHeight) + 3; // Add padding below formulas
@@ -783,4 +785,5 @@ export function InsulationResistanceAnalyzer() {
    </>
   );
 }
+
 
