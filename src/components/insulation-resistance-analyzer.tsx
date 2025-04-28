@@ -5,10 +5,11 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
-import { Calculator, FileText, Thermometer, FileDown, AlertCircle } from 'lucide-react';
+import { Calculator, FileText, Thermometer, FileDown, AlertCircle, CalendarClock } from 'lucide-react'; // Added CalendarClock
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
+import { format } from 'date-fns'; // Import format function
 
 import { Button } from '@/components/ui/button';
 import {
@@ -227,13 +228,17 @@ export function InsulationResistanceAnalyzer() {
          doc.setTextColor(0, 0, 0); // Reset color
          currentY += 8; // Reduced space after title
 
-        // --- Test Details Section ---
+         // --- Test Details Section ---
          doc.setFontSize(12); // Slightly smaller section title
          doc.setFont(undefined, 'bold');
          doc.text('Detalles de la Prueba', margin, currentY);
          currentY += 5; // Reduced space
          doc.setFontSize(9); // Smaller table font
          doc.setFont(undefined, 'normal');
+
+         // Get current date for the report
+         const printDate = format(new Date(), 'dd/MM/yyyy HH:mm');
+
          autoTable(doc, {
            startY: currentY,
            head: [['Parámetro', 'Valor']],
@@ -241,6 +246,7 @@ export function InsulationResistanceAnalyzer() {
              ['Nombre del Técnico:', formData.testerName],
              ['ID del Motor:', formData.motorId],
              ['Nro. de Serie del Motor:', formData.motorSerial],
+             ['Fecha de Impresión:', printDate], // Add print date here
            ],
            theme: 'grid',
            styles: { fontSize: 9, cellPadding: 1.5 }, // Reduced padding
@@ -398,8 +404,8 @@ export function InsulationResistanceAnalyzer() {
              };
 
             // Adjust font size - 18px (original) * 1.2 = 21.6px, Fraction parts 16px * 1.2 = 19.2px
-             const mainFontSize = 21.6;
-             const fractionFontSize = 19.2;
+            const mainFontSize = 21.6 * 1.2;
+            const fractionFontSize = 19.2 * 1.2;
 
              // PI Formula (Left Side)
              const piHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: ${mainFontSize}px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
@@ -410,7 +416,7 @@ export function InsulationResistanceAnalyzer() {
                 </span>
              </div>`;
              await doc.html(piHtml, { ...baseFormulaOptions, x: leftColX });
-             let piFormulaHeight = 18; // Estimate height based on adjusted font size
+             let piFormulaHeight = 21.6; // Estimate height based on adjusted font size
 
              // DAR Formula (Right Side)
              const darHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: ${mainFontSize}px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
@@ -422,7 +428,7 @@ export function InsulationResistanceAnalyzer() {
              </div>`;
               // Position DAR formula next to PI formula
               await doc.html(darHtml, { ...baseFormulaOptions, x: leftColX + formulaMaxWidth + 4 }); // Add gap (4mm)
-              let darFormulaHeight = 18; // Estimate height based on adjusted font size
+              let darFormulaHeight = 21.6; // Estimate height based on adjusted font size
 
              // Update currentY based on the taller formula
              currentY += Math.max(piFormulaHeight, darFormulaHeight) + 3; // Add padding below formulas
@@ -785,5 +791,3 @@ export function InsulationResistanceAnalyzer() {
    </>
   );
 }
-
-
