@@ -383,7 +383,7 @@ export function InsulationResistanceAnalyzer() {
              doc.setFont(undefined, 'bold');
              doc.text('Fórmulas Utilizadas', leftColX, currentY);
              currentY += 5; // Space after title
-             doc.setFontSize(9); // Smaller font for formulas
+             doc.setFontSize(9); // Smaller font for formulas - Increased size
              doc.setFont(undefined, 'normal');
 
              // Calculate available width for each formula
@@ -398,27 +398,29 @@ export function InsulationResistanceAnalyzer() {
              };
 
              // PI Formula (Left Side)
-             const piHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 11px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
+             // Increased font-size from 11px to 12px and fraction parts from 10px to 11px
+             const piHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 12px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
                 <b>PI = </b>
                 <span style="display: inline-block; vertical-align: middle; text-align: center; margin: 0 0.1em;">
-                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px; font-size: 10px;">Resistencia @ 10 min</span>
-                    <span style="display: block; padding-top: 1px; font-size: 10px;">Resistencia @ 1 min</span>
+                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px; font-size: 11px;">Resistencia @ 10 min</span>
+                    <span style="display: block; padding-top: 1px; font-size: 11px;">Resistencia @ 1 min</span>
                 </span>
              </div>`;
              await doc.html(piHtml, { ...baseFormulaOptions, x: leftColX });
-             let piFormulaHeight = 10; // Estimate height
+             let piFormulaHeight = 10; // Estimate height (remains rough estimate)
 
              // DAR Formula (Right Side)
-             const darHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 11px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
+             // Increased font-size from 11px to 12px and fraction parts from 10px to 11px
+             const darHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 12px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
                 <b>DAR = </b>
                 <span style="display: inline-block; vertical-align: middle; text-align: center; margin: 0 0.1em;">
-                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px; font-size: 10px;">Resistencia @ 1 min</span>
-                    <span style="display: block; padding-top: 1px; font-size: 10px;">Resistencia @ 30 seg</span>
+                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px; font-size: 11px;">Resistencia @ 1 min</span>
+                    <span style="display: block; padding-top: 1px; font-size: 11px;">Resistencia @ 30 seg</span>
                  </span>
              </div>`;
               // Position DAR formula next to PI formula
               await doc.html(darHtml, { ...baseFormulaOptions, x: leftColX + formulaMaxWidth + 4 }); // Add gap (4mm)
-              let darFormulaHeight = 10; // Estimate height
+              let darFormulaHeight = 10; // Estimate height (remains rough estimate)
 
              // Update currentY based on the taller formula
              currentY += Math.max(piFormulaHeight, darFormulaHeight) + 3; // Add padding below formulas
@@ -510,12 +512,12 @@ export function InsulationResistanceAnalyzer() {
 
         doc.setFontSize(11); doc.setFont(undefined, 'bold');
         doc.text('Valores de Referencia (IEEE Std 43-2013)', rightColX + 2, currentY + 3); currentY += 7; // Title with padding
-        doc.setFontSize(9); doc.setFont(undefined, 'normal'); // Base font size
+        doc.setFontSize(9); doc.setFont(undefined, 'normal'); // Base font size - Increased from 8
 
         const tableConfig = {
           theme: 'grid' as const,
-          styles: { fontSize: 8, cellPadding: 1, halign: 'left' }, // Smaller font, reduced padding
-          headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 8.5 }, // Smaller head font
+          styles: { fontSize: 8.5, cellPadding: 1, halign: 'left' }, // Increased font size slightly from 8
+          headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 9 }, // Increased head font size from 8.5
           tableWidth: colWidth,
           margin: { left: rightColX }, // Position table in the right column
           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
