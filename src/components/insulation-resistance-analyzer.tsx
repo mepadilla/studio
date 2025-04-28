@@ -381,7 +381,7 @@ export function InsulationResistanceAnalyzer() {
                     variant: "destructive",
                  });
             }
-             leftColEndY = currentY;
+             // leftColEndY = currentY; // Removed: We determine leftColEndY after formulas and note
 
              // --- Formulas Section ---
              if (currentY + 20 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for formulas
@@ -521,7 +521,7 @@ export function InsulationResistanceAnalyzer() {
         }
 
         // Reference Tables Card (Mimicking UI)
-        // currentY += 10; // Add 10mm space before reference tables - REMOVED
+        currentY += 10; // Add 10mm space before reference tables
         if (currentY + 70 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for reference title + tables
 
         // Card Box (optional)
@@ -805,4 +805,3 @@ export function InsulationResistanceAnalyzer() {
    </>
   );
 }
-
