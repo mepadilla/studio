@@ -308,7 +308,7 @@ export function InsulationResistanceAnalyzer() {
            head: [['Tiempo', 'Resistencia (G-OHM)', 'Tiempo', 'Resistencia (G-OHM)']], // Updated Header
            body: readingsBody4Col,
            theme: 'grid',
-           styles: { fontSize: 8, cellPadding: 1, halign: 'center' }, // Smaller font, reduced padding
+           styles: { fontSize: 8, cellPadding: 1, halign: 'center' }, // Smaller font, reduced padding, centered resistance
            headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 8.5 }, // Smaller head font
            columnStyles: {
              0: { cellWidth: 'auto', halign: 'left' },
@@ -438,10 +438,20 @@ export function InsulationResistanceAnalyzer() {
              doc.setFontSize(8); // Smaller font for the note
              doc.setFont(undefined, 'italic'); // Italicize the note
              doc.setTextColor(100, 100, 100); // Muted text color
-             const noteText = "El Índice de Polarización (PI) y el Ratio de Absorción Dieléctrica (DAR) evalúan la calidad del aislamiento eléctrico. El PI mide el aumento de la resistencia con el tiempo, mientras que el DAR compara la absorción inicial de corriente con la posterior. Valores altos indican un aislamiento en buen estado y seco, crucial para prevenir fallas eléctricas.";
-             const splitNote = doc.splitTextToSize(noteText, colWidth); // Wrap text to fit left column width
-             doc.text(splitNote, leftColX, currentY);
-             currentY += (splitNote.length * 3.5) + 3; // Adjust Y based on wrapped lines, add padding
+             const noteText1 = "El Índice de Polarización (PI) y el Ratio de Absorción Dieléctrica (DAR) evalúan la calidad del aislamiento eléctrico. El PI mide el aumento de la resistencia con el tiempo, mientras que el DAR compara la absorción inicial de corriente con la posterior. Valores altos indican un aislamiento en buen estado y seco, crucial para prevenir fallas eléctricas.";
+             const splitNote1 = doc.splitTextToSize(noteText1, colWidth); // Wrap text to fit left column width
+             doc.text(splitNote1, leftColX, currentY);
+             currentY += (splitNote1.length * 3.5) + 3; // Adjust Y based on wrapped lines, add padding
+
+             // --- Second Descriptive Note Section ---
+             if (currentY + 15 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for second note
+             // Maintain same styling as first note
+             const noteText2 = "Para aislamientos con una resistencia significativamente elevada, los valores de PI y DAR pueden ser cercanos a 1. En estos casos, la alta resistencia constante es el principal indicador de un aislamiento en buen estado.";
+             const splitNote2 = doc.splitTextToSize(noteText2, colWidth); // Wrap text
+             doc.text(splitNote2, leftColX, currentY);
+             currentY += (splitNote2.length * 3.5) + 3; // Adjust Y based on wrapped lines, add padding
+
+
              doc.setFont(undefined, 'normal'); // Reset font style
              doc.setTextColor(0, 0, 0); // Reset text color
 
