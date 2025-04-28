@@ -97,17 +97,7 @@ export default function RootLayout({
         <main className="flex-grow container py-6"> {/* Add container and padding */}
            {children}
         </main>
-        <footer className="w-full py-4 px-6 mt-auto text-center text-xs text-muted-foreground bg-background border-t border-border">
-          © 2025, Desarrollado por{' '}
-          <Link
-            href="https://www.linkedin.com/in/melvin-padilla-3425106"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-primary hover:underline"
-          >
-            Ing. Melvin E. Padilla
-          </Link>
-        </footer>
+        {/* Footer Removed */}
       </body>
     </html>
   );

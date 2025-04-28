@@ -219,34 +219,6 @@ export function InsulationResistanceAnalyzer() {
          const contentWidth = pageWidth - margin * 2;
          let currentY = margin; // Start Y position
 
-         // --- Footer Function ---
-         const addFooter = () => {
-             const footerText = `© 2025, Desarrollado por Ing. Melvin E. Padilla`;
-             const footerLink = 'https://www.linkedin.com/in/melvin-padilla-3425106'; // Ensure https://
-
-             doc.setFontSize(8);
-             doc.setTextColor(150, 150, 150); // Muted color
-             const textWidth = doc.getStringUnitWidth(footerText) * doc.getFontSize() / doc.internal.scaleFactor;
-             const textX = (pageWidth - textWidth) / 2;
-             const textY = pageHeight - 10; // Position 10mm from bottom
-
-             // Check if link part needs special handling
-             const namePart = "Ing. Melvin E. Padilla";
-             const textBeforeName = `© 2025, Desarrollado por `;
-             const xBeforeName = textX;
-             const xName = textX + doc.getStringUnitWidth(textBeforeName) * doc.getFontSize() / doc.internal.scaleFactor;
-
-             // Draw text before name
-             doc.text(textBeforeName, xBeforeName, textY);
-
-             // Draw name as link
-             doc.setTextColor(Number('0x1A'), Number('0x23'), Number('0x7E')); // Primary color for link
-             doc.textWithLink(namePart, xName, textY, { url: footerLink });
-
-             doc.setTextColor(150, 150, 150); // Reset color for potential other footer elements
-         };
-
-
          // Title
          doc.setFontSize(16); // Slightly smaller title
          doc.setFont(undefined, 'bold');
@@ -281,7 +253,7 @@ export function InsulationResistanceAnalyzer() {
            headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', fontSize: 9 }, // Smaller head font
            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 45 }, 1: { cellWidth: contentWidth - 45} }, // Adjusted width
            margin: { left: margin, right: margin },
-           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; addFooter(); } // Add footer on new pages
+           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; } // Remove footer call
          });
          currentY = (doc as any).lastAutoTable.finalY + 8; // Reduced space
 
@@ -345,7 +317,7 @@ export function InsulationResistanceAnalyzer() {
              3: { cellWidth: 'auto', halign: 'center' }, // Center resistance column 2
            },
            margin: { left: margin, right: margin },
-           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; addFooter(); } // Add footer on new pages
+           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; } // Remove footer call
          });
          currentY = (doc as any).lastAutoTable.finalY + 8; // Reduced space
 
@@ -412,7 +384,7 @@ export function InsulationResistanceAnalyzer() {
 
 
              // --- Descriptive Notes Section (inside a box) ---
-             const notesStartY = currentY; // Store Y before notes
+             const notesStartY = currentY + 5; // Start slightly lower to avoid touching chart
              if (notesStartY + 25 > pageHeight - 15) { doc.addPage(); currentY = margin; } // Check space for notes + box + footer space
 
              doc.setFontSize(8); // Smaller font for the note
@@ -449,7 +421,7 @@ export function InsulationResistanceAnalyzer() {
 
 
              // --- Formula Notes Section (inside a box) --- New Section
-             const formulaNotesStartY = currentY; // Store Y before notes
+             const formulaNotesStartY = currentY + 5; // Start slightly lower
              if (formulaNotesStartY + 20 > pageHeight - 15) { doc.addPage(); currentY = margin; } // Check space + footer space
 
              const formulaBoxPadding = 2;
@@ -584,7 +556,7 @@ export function InsulationResistanceAnalyzer() {
           headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 9 }, // Increased head font size from 8.5
           tableWidth: colWidth,
           margin: { left: rightColX }, // Position table in the right column
-          didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; addFooter(); } // Add footer on new pages
+          didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; } // Remove footer call
         };
 
         // PI Reference
@@ -658,9 +630,7 @@ export function InsulationResistanceAnalyzer() {
         doc.text('Firma del Supervisor:', supervisorXStart, signatureY);
         doc.line(supervisorXStart, signatureY + 4, supervisorXStart + signatureLineLength, signatureY + 4);
 
-         // --- Add Footer to the last page ---
-         addFooter();
-
+         // Footer removed
 
          // Save the PDF
          doc.save(`Reporte_Resistencia_Aislamiento_${formData.motorId || 'Motor'}.pdf`);
