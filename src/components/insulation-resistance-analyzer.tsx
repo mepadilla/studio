@@ -403,9 +403,9 @@ export function InsulationResistanceAnalyzer() {
                 windowWidth: 300 // Smaller arbitrary width for rendering
              };
 
-            // Adjust font size - 18px (original) * 1.2 = 21.6px, Fraction parts 16px * 1.2 = 19.2px
-            const mainFontSize = 21.6 * 1.2;
-            const fractionFontSize = 19.2 * 1.2;
+            // Adjust font size - (original * 1.2)
+            const mainFontSize = 18 * 1.2; // Approx 21.6px
+            const fractionFontSize = 16 * 1.2; // Approx 19.2px
 
              // PI Formula (Left Side)
              const piHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: ${mainFontSize}px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
@@ -509,7 +509,8 @@ export function InsulationResistanceAnalyzer() {
         }
 
         // Reference Tables Card (Mimicking UI)
-        if (currentY + 70 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for reference title + tables
+        currentY += 10; // Add 10mm space before reference tables
+        if (currentY + 70 > pageHeight) { doc.addPage(); currentY = margin + 10; } // Check space for reference title + tables + added space
 
         // Card Box (optional)
         const refCardStartY = currentY;
