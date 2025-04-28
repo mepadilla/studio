@@ -323,7 +323,7 @@ export function InsulationResistanceAnalyzer() {
         const rightColX = margin + contentWidth / 2 + 4; // Reduced gap
         const colWidth = contentWidth / 2 - 4; // Adjust col width for gap
 
-        // --- Column 1: Chart ---
+        // --- Column 1: Chart and Formulas ---
         const chartElement = innerChartRef.current; // Use the inner chart ref here
         let leftColEndY = resultsStartY;
         if (chartElement && chartData.length > 0) {
@@ -376,6 +376,52 @@ export function InsulationResistanceAnalyzer() {
                  });
             }
              leftColEndY = currentY;
+
+             // --- Formulas Section ---
+             if (currentY + 20 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for formulas
+             doc.setFontSize(10); // Slightly smaller than chart title
+             doc.setFont(undefined, 'bold');
+             doc.text('Fórmulas Utilizadas', leftColX, currentY);
+             currentY += 5; // Space after title
+             doc.setFontSize(9); // Smaller font for formulas
+             doc.setFont(undefined, 'normal');
+
+             // Using html method for basic formatting (fractions)
+             // Note: jsPDF html method has limited CSS/HTML support.
+             // For complex formulas, consider math libraries or images.
+             const formulaOptions = {
+                x: leftColX,
+                y: currentY,
+                width: colWidth,
+                windowWidth: 600 // Arbitrary width for rendering
+             };
+
+             // PI Formula
+             const piHtml = `<p style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 12px;">
+                <b>PI = </b>
+                <span style="display: inline-block; vertical-align: middle; text-align: center; margin: 0 0.2em;">
+                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px;">Resistencia @ 10 min</span>
+                    <span style="display: block; padding-top: 1px;">Resistencia @ 1 min</span>
+                </span>
+             </p>`;
+             await doc.html(piHtml, formulaOptions);
+             currentY += 12; // Adjust Y based on approximate height of the formula
+
+
+             // DAR Formula
+             if (currentY + 15 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for DAR
+             const darHtml = `<p style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 12px;">
+                <b>DAR = </b>
+                <span style="display: inline-block; vertical-align: middle; text-align: center; margin: 0 0.2em;">
+                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px;">Resistencia @ 1 min</span>
+                    <span style="display: block; padding-top: 1px;">Resistencia @ 30 seg</span>
+                 </span>
+             </p>`;
+              await doc.html(darHtml, { ...formulaOptions, y: currentY });
+              currentY += 12; // Adjust Y
+
+             leftColEndY = currentY; // Update the end Y of the left column
+
         } else {
             if (currentY + 8 > pageHeight) { doc.addPage(); currentY = margin; }
              doc.setFontSize(9);
