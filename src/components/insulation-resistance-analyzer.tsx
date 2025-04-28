@@ -383,7 +383,7 @@ export function InsulationResistanceAnalyzer() {
              doc.setFont(undefined, 'bold');
              doc.text('Fórmulas Utilizadas', leftColX, currentY);
              currentY += 5; // Space after title
-             doc.setFontSize(9); // Smaller font for formulas - Increased size
+             doc.setFontSize(12); // Doubled font size for formulas
              doc.setFont(undefined, 'normal');
 
              // Calculate available width for each formula
@@ -398,29 +398,29 @@ export function InsulationResistanceAnalyzer() {
              };
 
              // PI Formula (Left Side)
-             // Increased font-size from 11px to 12px and fraction parts from 10px to 11px
-             const piHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 12px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
+             // Increased main font-size to 18px (was 12), fraction parts to 16px (was 11)
+             const piHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 18px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
                 <b>PI = </b>
                 <span style="display: inline-block; vertical-align: middle; text-align: center; margin: 0 0.1em;">
-                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px; font-size: 11px;">Resistencia @ 10 min</span>
-                    <span style="display: block; padding-top: 1px; font-size: 11px;">Resistencia @ 1 min</span>
+                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px; font-size: 16px;">Resistencia @ 10 min</span>
+                    <span style="display: block; padding-top: 1px; font-size: 16px;">Resistencia @ 1 min</span>
                 </span>
              </div>`;
              await doc.html(piHtml, { ...baseFormulaOptions, x: leftColX });
-             let piFormulaHeight = 10; // Estimate height (remains rough estimate)
+             let piFormulaHeight = 15; // Increased estimate height
 
              // DAR Formula (Right Side)
-             // Increased font-size from 11px to 12px and fraction parts from 10px to 11px
-             const darHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 12px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
+             // Increased main font-size to 18px (was 12), fraction parts to 16px (was 11)
+             const darHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 18px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
                 <b>DAR = </b>
                 <span style="display: inline-block; vertical-align: middle; text-align: center; margin: 0 0.1em;">
-                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px; font-size: 11px;">Resistencia @ 1 min</span>
-                    <span style="display: block; padding-top: 1px; font-size: 11px;">Resistencia @ 30 seg</span>
+                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px; font-size: 16px;">Resistencia @ 1 min</span>
+                    <span style="display: block; padding-top: 1px; font-size: 16px;">Resistencia @ 30 seg</span>
                  </span>
              </div>`;
               // Position DAR formula next to PI formula
               await doc.html(darHtml, { ...baseFormulaOptions, x: leftColX + formulaMaxWidth + 4 }); // Add gap (4mm)
-              let darFormulaHeight = 10; // Estimate height (remains rough estimate)
+              let darFormulaHeight = 15; // Increased estimate height
 
              // Update currentY based on the taller formula
              currentY += Math.max(piFormulaHeight, darFormulaHeight) + 3; // Add padding below formulas
@@ -783,3 +783,4 @@ export function InsulationResistanceAnalyzer() {
    </>
   );
 }
+
