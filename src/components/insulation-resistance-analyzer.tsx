@@ -433,6 +433,18 @@ export function InsulationResistanceAnalyzer() {
              // Update currentY based on the taller formula
              currentY += Math.max(piFormulaHeight, darFormulaHeight) + 3; // Add padding below formulas
 
+              // --- Descriptive Note Section ---
+             if (currentY + 15 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for note
+             doc.setFontSize(8); // Smaller font for the note
+             doc.setFont(undefined, 'italic'); // Italicize the note
+             doc.setTextColor(100, 100, 100); // Muted text color
+             const noteText = "El Índice de Polarización (PI) y el Ratio de Absorción Dieléctrica (DAR) evalúan la calidad del aislamiento eléctrico. El PI mide el aumento de la resistencia con el tiempo, mientras que el DAR compara la absorción inicial de corriente con la posterior. Valores altos indican un aislamiento en buen estado y seco, crucial para prevenir fallas eléctricas.";
+             const splitNote = doc.splitTextToSize(noteText, colWidth); // Wrap text to fit left column width
+             doc.text(splitNote, leftColX, currentY);
+             currentY += (splitNote.length * 3.5) + 3; // Adjust Y based on wrapped lines, add padding
+             doc.setFont(undefined, 'normal'); // Reset font style
+             doc.setTextColor(0, 0, 0); // Reset text color
+
              leftColEndY = currentY; // Update the end Y of the left column
 
         } else {
@@ -509,8 +521,8 @@ export function InsulationResistanceAnalyzer() {
         }
 
         // Reference Tables Card (Mimicking UI)
-        currentY += 10; // Add 10mm space before reference tables
-        if (currentY + 70 > pageHeight) { doc.addPage(); currentY = margin + 10; } // Check space for reference title + tables + added space
+        // currentY += 10; // Add 10mm space before reference tables - REMOVED
+        if (currentY + 70 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for reference title + tables
 
         // Card Box (optional)
         const refCardStartY = currentY;
@@ -555,6 +567,7 @@ export function InsulationResistanceAnalyzer() {
         // currentY += 3; // Reduced space between tables // Handled in didDrawTable
 
         // DAR Reference
+         currentY += 5; // Add vertical space between reference tables
         if (currentY + 35 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for DAR table
         autoTable(doc, {
           startY: currentY,
@@ -792,3 +805,4 @@ export function InsulationResistanceAnalyzer() {
    </>
   );
 }
+
