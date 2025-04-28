@@ -386,39 +386,42 @@ export function InsulationResistanceAnalyzer() {
              doc.setFontSize(9); // Smaller font for formulas
              doc.setFont(undefined, 'normal');
 
+             // Calculate available width for each formula
+             const formulaContainerWidth = colWidth;
+             const formulaMaxWidth = formulaContainerWidth / 2 - 2; // Divide width by 2 and add small gap
+
              // Using html method for basic formatting (fractions)
-             // Note: jsPDF html method has limited CSS/HTML support.
-             // For complex formulas, consider math libraries or images.
-             const formulaOptions = {
-                x: leftColX,
+             const baseFormulaOptions = {
                 y: currentY,
-                width: colWidth,
-                windowWidth: 600 // Arbitrary width for rendering
+                width: formulaMaxWidth,
+                windowWidth: 300 // Smaller arbitrary width for rendering
              };
 
-             // PI Formula
-             const piHtml = `<p style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 12px;">
+             // PI Formula (Left Side)
+             const piHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 11px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
                 <b>PI = </b>
-                <span style="display: inline-block; vertical-align: middle; text-align: center; margin: 0 0.2em;">
-                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px;">Resistencia @ 10 min</span>
-                    <span style="display: block; padding-top: 1px;">Resistencia @ 1 min</span>
+                <span style="display: inline-block; vertical-align: middle; text-align: center; margin: 0 0.1em;">
+                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px; font-size: 10px;">Resistencia @ 10 min</span>
+                    <span style="display: block; padding-top: 1px; font-size: 10px;">Resistencia @ 1 min</span>
                 </span>
-             </p>`;
-             await doc.html(piHtml, formulaOptions);
-             currentY += 12; // Adjust Y based on approximate height of the formula
+             </div>`;
+             await doc.html(piHtml, { ...baseFormulaOptions, x: leftColX });
+             let piFormulaHeight = 10; // Estimate height
 
-
-             // DAR Formula
-             if (currentY + 15 > pageHeight) { doc.addPage(); currentY = margin; } // Check space for DAR
-             const darHtml = `<p style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 12px;">
+             // DAR Formula (Right Side)
+             const darHtml = `<div style="font-family: 'Helvetica', 'Arial', sans-serif; font-size: 11px; display: inline-block; vertical-align: top; width: 100%; text-align: center;">
                 <b>DAR = </b>
-                <span style="display: inline-block; vertical-align: middle; text-align: center; margin: 0 0.2em;">
-                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px;">Resistencia @ 1 min</span>
-                    <span style="display: block; padding-top: 1px;">Resistencia @ 30 seg</span>
+                <span style="display: inline-block; vertical-align: middle; text-align: center; margin: 0 0.1em;">
+                    <span style="display: block; border-bottom: 1px solid black; padding-bottom: 1px; font-size: 10px;">Resistencia @ 1 min</span>
+                    <span style="display: block; padding-top: 1px; font-size: 10px;">Resistencia @ 30 seg</span>
                  </span>
-             </p>`;
-              await doc.html(darHtml, { ...formulaOptions, y: currentY });
-              currentY += 12; // Adjust Y
+             </div>`;
+              // Position DAR formula next to PI formula
+              await doc.html(darHtml, { ...baseFormulaOptions, x: leftColX + formulaMaxWidth + 4 }); // Add gap (4mm)
+              let darFormulaHeight = 10; // Estimate height
+
+             // Update currentY based on the taller formula
+             currentY += Math.max(piFormulaHeight, darFormulaHeight) + 3; // Add padding below formulas
 
              leftColEndY = currentY; // Update the end Y of the left column
 
