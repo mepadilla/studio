@@ -458,13 +458,15 @@ export function InsulationResistanceAnalyzer() {
              textY += (splitNote2.length * 3.5); // Adjust Y
 
              // Calculate box height
-             const boxHeight = textY - currentY + boxPadding; // Total height including bottom padding
+             const boxHeight = textY - currentY; // Total height (removed bottom padding calculation)
 
              // Draw the rounded rectangle around the notes
              doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
-             doc.roundedRect(leftColX, currentY, colWidth, boxHeight, 1.5, 1.5, 'S'); // Draw the box
+             // Draw the box with adjusted height
+             doc.roundedRect(leftColX, currentY, colWidth, boxHeight + boxPadding * 2, 1.5, 1.5, 'S');
 
-             currentY = currentY + boxHeight + 3; // Update current Y below the box + padding
+
+             currentY = currentY + boxHeight + boxPadding * 2 + 3; // Update current Y below the box + padding
 
              doc.setFont(undefined, 'normal'); // Reset font style
              doc.setTextColor(0, 0, 0); // Reset text color
@@ -521,8 +523,8 @@ export function InsulationResistanceAnalyzer() {
                 let fillColor: [number, number, number] = [220, 220, 220]; // Default outline/gray
                 let textColor: [number, number, number] = [50, 50, 50]; // Default dark text
                 switch (condition.toLowerCase()) {
-                   case 'excelente': fillColor = [26, 35, 126]; textColor = [255, 255, 255]; break; // Primary (Dark Blue) approx
-                   case 'bueno': fillColor = [0, 150, 136]; textColor = [255, 255, 255]; break; // Accent (Teal) approx
+                   case 'excelente': fillColor = [0, 150, 136]; textColor = [255, 255, 255]; break; // Changed Excellent to Teal (Accent)
+                   case 'bueno': fillColor = [26, 35, 126]; textColor = [255, 255, 255]; break; // Changed Bueno to Dark Blue (Primary)
                    case 'cuestionable': fillColor = [224, 224, 224]; textColor = [50, 50, 50]; break; // Secondary (Light Gray) approx
                    case 'malo':
                    case 'peligroso': fillColor = [220, 53, 69]; textColor = [255, 255, 255]; break; // Destructive (Red) approx
@@ -543,6 +545,7 @@ export function InsulationResistanceAnalyzer() {
 
              const startYPi = currentY;
              currentY = drawIndexRow('Índice de Polarización (PI):', piValue, piCondition, currentY);
+             const endYPi = currentY;
              currentY = drawIndexRow('Ratio Absorción Dieléctrica (DAR):', darValue, darCondition, currentY);
              const indicesCardEndY = currentY; // Store Y after drawing content
 
@@ -624,11 +627,12 @@ export function InsulationResistanceAnalyzer() {
         doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
         doc.roundedRect(rightColX - 1, refBorderStartY - 1, colWidth + 2, refCardEndY - refBorderStartY + 1, 1.5, 1.5, 'S'); // Adjusted height, smaller rounding
 
-        currentY = refCardEndY + 3; // Update current Y below the reference card + padding
+        // Update current Y below the reference card + padding (Use the same padding as after indices card)
+        currentY = refCardEndY + 3;
 
 
         // --- Formula Notes Section (inside a box) --- Below Reference Tables
-         const formulaNotesStartY = currentY + 5; // Start slightly lower
+         const formulaNotesStartY = currentY; // Start immediately after the reference card padding
          if (formulaNotesStartY + 20 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } // Check space + potential footer space
          else { currentY = formulaNotesStartY; } // Continue on same page
 
@@ -653,22 +657,22 @@ export function InsulationResistanceAnalyzer() {
          formulaTextY += 5; // Space between formulas (Increased slightly)
 
          doc.text(darFormulaText, rightColX + formulaBoxPadding, formulaTextY);
-         formulaTextY += 5; // Adjust Y
+         formulaTextY += 1; // Less space after last formula line
 
+         // Calculate box height based on text position
+         const formulaBoxHeight = formulaTextY - currentY;
 
-         // Calculate box height
-         const formulaBoxHeight = formulaTextY - currentY; // Total height
-
-         // Draw the rounded rectangle
+         // Draw the rounded rectangle around the formula text
          doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
-         doc.roundedRect(rightColX -1, currentY -1, colWidth + 2, formulaBoxHeight +2, 1.5, 1.5, 'S'); // Draw the box
+         // Adjust height to wrap text tightly + padding
+         doc.roundedRect(rightColX - 1, currentY - 1, colWidth + 2, formulaBoxHeight + formulaBoxPadding * 2 + 1, 1.5, 1.5, 'S');
 
 
-         currentY = formulaTextY + 3; // Update current Y below the box + padding
+         currentY = currentY + formulaBoxHeight + formulaBoxPadding * 2 + 4; // Update current Y below the box + adjusted padding
 
 
          // --- Signature Section --- Stacked Vertically --- Below Formulas/Notes
-         const signatureStartY = currentY + 5; // Start below formulas
+         const signatureStartY = currentY; // Start below formulas
          if (signatureStartY + 30 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } // Check space for signatures + footer
          else { currentY = signatureStartY; } // Continue on same page
 
