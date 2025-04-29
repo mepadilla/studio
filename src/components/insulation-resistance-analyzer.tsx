@@ -5,7 +5,7 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
-import { Calculator, FileText, Thermometer, FileDown, AlertCircle, CalendarClock } from 'lucide-react'; // Added CalendarClock
+import { Calculator, FileText, Thermometer, FileDown, AlertCircle, CalendarClock, Link as LinkIcon } from 'lucide-react'; // Added CalendarClock & LinkIcon
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
@@ -216,8 +216,50 @@ export function InsulationResistanceAnalyzer() {
          const pageHeight = doc.internal.pageSize.height;
          const pageWidth = doc.internal.pageSize.width;
          const margin = 15;
+         const footerHeight = 10; // Estimated footer height
          const contentWidth = pageWidth - margin * 2;
          let currentY = margin; // Start Y position
+
+         // Add Footer Function
+         const addFooter = () => {
+             const pageCount = doc.internal.getNumberOfPages();
+             doc.setFontSize(8);
+             doc.setTextColor(150); // Muted color
+
+             for (let i = 1; i <= pageCount; i++) {
+                 doc.setPage(i);
+                 const footerY = pageHeight - margin + 5; // Position slightly below bottom margin
+
+                 // Left part: Copyright
+                 const copyrightText = "© 2025, desarrollado por ";
+                 doc.text(copyrightText, margin, footerY, { align: 'left' });
+
+                 // Middle part: Link (Clickable Text)
+                 const linkText = "Ing. Melvin E. Padilla";
+                 const linkUrl = "https://www.linkedin.com/in/melvin-padilla-3425106";
+                 const linkTextWidth = doc.getTextWidth(linkText);
+                 const copyrightTextWidth = doc.getTextWidth(copyrightText);
+                 const linkX = margin + copyrightTextWidth;
+
+                 doc.setTextColor(Number('0x1A'), Number('0x23'), Number('0x7E')); // Primary color for link
+                 doc.textWithLink(linkText, linkX, footerY, { url: linkUrl });
+                 doc.setDrawColor(Number('0x1A'), Number('0x23'), Number('0x7E')); // Set underline color
+                 doc.line(linkX, footerY + 0.5, linkX + linkTextWidth, footerY + 0.5); // Add underline manually
+
+                 // Right part: Period
+                 const periodText = ".";
+                 const periodX = linkX + linkTextWidth;
+                 doc.setTextColor(150); // Reset to muted color
+                 doc.text(periodText, periodX, footerY, { align: 'left' });
+
+
+                 // Page number (far right)
+                 const pageNumText = `Página ${i} de ${pageCount}`;
+                 doc.text(pageNumText, pageWidth - margin, footerY, { align: 'right' });
+             }
+             doc.setTextColor(0); // Reset color for subsequent elements
+         };
+
 
          // Title
          doc.setFontSize(16); // Slightly smaller title
@@ -259,7 +301,7 @@ export function InsulationResistanceAnalyzer() {
 
 
          // --- Resistance Readings Section (4 columns) ---
-         if (currentY + 50 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Estimate height check
+         if (currentY + 50 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } // Estimate height check including footer space
          doc.setFontSize(12); // Section title
          doc.setFont(undefined, 'bold');
          doc.text('Lecturas de Resistencia de Aislamiento', margin, currentY); // Title without units here
@@ -329,12 +371,12 @@ export function InsulationResistanceAnalyzer() {
         const rightColX = margin + contentWidth / 2 + 4; // Reduced gap
         const colWidth = contentWidth / 2 - 4; // Adjust col width for gap
 
-        // --- Column 1: Chart, Signatures, and Notes ---
+        // --- Column 1: Chart, Notes ---
         const chartElement = innerChartRef.current; // Use the inner chart ref here
         let leftColEndY = resultsStartY;
         if (chartElement && chartData.length > 0) {
             const chartTitleY = currentY;
-            if (chartTitleY + 60 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Estimate height + title
+            if (chartTitleY + 60 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } // Estimate height + title + footer space
             doc.setFontSize(11); // Smaller chart title
             doc.setFont(undefined, 'bold');
             doc.text('Gráfico Resistencia vs. Tiempo', leftColX, currentY);
@@ -356,7 +398,7 @@ export function InsulationResistanceAnalyzer() {
                 const pdfChartWidth = colWidth;
                 const pdfChartHeight = (imgProps.height * pdfChartWidth) / imgProps.width;
 
-                if (currentY + pdfChartHeight > pageHeight - margin) { // Check height against page end
+                if (currentY + pdfChartHeight > pageHeight - margin - footerHeight) { // Check height against page end + footer space
                   doc.addPage();
                   currentY = margin;
                   // Redraw title if needed on new page
@@ -369,7 +411,7 @@ export function InsulationResistanceAnalyzer() {
                 currentY += pdfChartHeight + 3; // Reduced padding below chart
             } catch (error) {
                 console.error("Error generando imagen del gráfico:", error);
-                 if (currentY + 10 > pageHeight - margin) { doc.addPage(); currentY = margin; }
+                 if (currentY + 10 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
                  doc.setTextColor(255, 0, 0); // Red for error
                  doc.setFontSize(9);
                  doc.text('Error generando imagen del gráfico.', leftColX, currentY);
@@ -382,34 +424,9 @@ export function InsulationResistanceAnalyzer() {
                  });
             }
 
-             // --- Signature Section --- Stacked Vertically --- Moved under Chart
-             const signatureStartY = currentY + 5; // Start below chart
-             if (signatureStartY + 30 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space for signatures
-             else { currentY = signatureStartY; } // Continue on same page
-
-             doc.setFontSize(9); // Smaller signature font
-             const signatureXStart = leftColX; // Align signatures to the left column start
-             const signatureLineLength = 65; // Slightly longer line
-             let signatureY = currentY;
-
-             // Tester Signature
-             doc.text('Firma del Técnico:', signatureXStart, signatureY);
-             doc.line(signatureXStart, signatureY + 4, signatureXStart + signatureLineLength, signatureY + 4);
-             doc.text(formData.testerName, signatureXStart, signatureY + 8); // Add name below line
-             signatureY += 15; // Add space between signatures
-
-             // Supervisor Signature
-             if (signatureY + 10 > pageHeight - margin) { doc.addPage(); currentY = margin; signatureY = currentY; } // Check space for second signature
-             doc.text('Firma del Supervisor:', signatureXStart, signatureY);
-             doc.line(signatureXStart, signatureY + 4, signatureXStart + signatureLineLength, signatureY + 4);
-             signatureY += 10; // Update Y position after supervisor signature
-
-             currentY = signatureY + 5; // Update main Y cursor with padding below signatures
-
-
-             // --- Descriptive Notes Section (inside a box) --- Moved Below Signatures
-             const notesStartY = currentY; // Start below signatures + padding
-             if (notesStartY + 25 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space for notes + box
+             // --- Descriptive Notes Section (inside a box) --- Moved Below Chart
+             const notesStartY = currentY + 5; // Start slightly below chart
+             if (notesStartY + 45 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } // Check space for notes box + footer
              else { currentY = notesStartY; }
 
              doc.setFontSize(8); // Smaller font for the note
@@ -456,20 +473,20 @@ export function InsulationResistanceAnalyzer() {
               leftColEndY = currentY; // Update the end Y of the left column
 
         } else {
-            if (currentY + 8 > pageHeight - margin) { doc.addPage(); currentY = margin; }
+            if (currentY + 8 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
              doc.setFontSize(9);
             doc.text('Gráfico no disponible.', leftColX, currentY); currentY += 8;
             leftColEndY = currentY;
         }
 
 
-        // --- Column 2: Indices & Reference & Formulas ---
+        // --- Column 2: Indices & Reference & Formulas & Signatures ---
         currentY = resultsStartY; // Reset Y to start of results section for the right column
         let rightColEndY = resultsStartY;
 
         // Indices Results Card (Mimicking UI)
         if (polarizationIndex !== null || dielectricAbsorptionRatio !== null) {
-             if (currentY + 35 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Estimate height
+             if (currentY + 35 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } // Estimate height + footer
 
              // Card Box (optional visual cue)
              doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
@@ -530,7 +547,7 @@ export function InsulationResistanceAnalyzer() {
 
         // Reference Tables Card (Mimicking UI)
         currentY += 10; // Add 10mm space before reference tables
-        if (currentY + 70 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space for reference title + tables
+        if (currentY + 70 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } // Check space for reference title + tables + footer
 
         // Card Box (optional)
         const refCardStartY = currentY;
@@ -575,7 +592,7 @@ export function InsulationResistanceAnalyzer() {
 
         // DAR Reference
         currentY += 5; // Add vertical space between reference tables
-        if (currentY + 35 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space for DAR table
+        if (currentY + 35 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } // Check space for DAR table + footer
         autoTable(doc, {
           startY: currentY,
           head: [['Valor DAR', 'Condición']],
@@ -599,12 +616,12 @@ export function InsulationResistanceAnalyzer() {
         const refCardEndY = currentY; // Y position after DAR table caption
         doc.roundedRect(rightColX - 1, refCardStartY - 1, colWidth + 2, refCardEndY - refCardStartY + 1, 1.5, 1.5, 'S'); // Adjusted height, smaller rounding
 
-        rightColEndY = currentY + 3; // Update end Y for the right column
+        currentY = refCardEndY + 3; // Update current Y below the reference card + padding
 
 
-        // --- Formula Notes Section (inside a box) --- Moved Below Reference Tables
-         const formulaNotesStartY = rightColEndY + 5; // Start slightly lower
-         if (formulaNotesStartY + 20 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space + potential footer space
+        // --- Formula Notes Section (inside a box) --- Below Reference Tables
+         const formulaNotesStartY = currentY + 5; // Start slightly lower
+         if (formulaNotesStartY + 20 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } // Check space + potential footer space
          else { currentY = formulaNotesStartY; } // Continue on same page
 
 
@@ -640,12 +657,42 @@ export function InsulationResistanceAnalyzer() {
 
 
          currentY = formulaTextY + 3; // Update current Y below the box + padding
+
+
+         // --- Signature Section --- Stacked Vertically --- Below Formulas/Notes
+         const signatureStartY = currentY + 5; // Start below formulas
+         if (signatureStartY + 30 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } // Check space for signatures + footer
+         else { currentY = signatureStartY; } // Continue on same page
+
+         doc.setFontSize(9); // Smaller signature font
+         const signatureXStart = rightColX; // Align signatures to the right column start
+         const signatureLineLength = 65; // Slightly longer line
+         let signatureY = currentY;
+
+         // Tester Signature
+         doc.text('Firma del Técnico:', signatureXStart, signatureY);
+         doc.line(signatureXStart, signatureY + 4, signatureXStart + signatureLineLength, signatureY + 4);
+         doc.text(formData.testerName, signatureXStart, signatureY + 8); // Add name below line
+         signatureY += 15; // Add space between signatures
+
+         // Supervisor Signature
+         if (signatureY + 10 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; signatureY = currentY; } // Check space for second signature + footer
+         doc.text('Firma del Supervisor:', signatureXStart, signatureY);
+         doc.line(signatureXStart, signatureY + 4, signatureXStart + signatureLineLength, signatureY + 4);
+         signatureY += 10; // Update Y position after supervisor signature
+
+         currentY = signatureY + 5; // Update main Y cursor with padding below signatures
+
          rightColEndY = currentY; // Update end Y for the right column
 
 
 
         // --- Move Y to below the longest column before finishing ---
-        currentY = Math.max(leftColEndY, rightColEndY) + 10; // Ensure content doesn't overlap footer, add padding
+        currentY = Math.max(leftColEndY, rightColEndY); // Ensure content doesn't overlap footer
+
+
+         // --- Add Footer to all pages ---
+         addFooter();
 
          // Save the PDF
          doc.save(`Reporte_Resistencia_Aislamiento_${formData.motorId || 'Motor'}.pdf`);
