@@ -486,11 +486,12 @@ export function InsulationResistanceAnalyzer() {
 
         // Indices Results Card (Mimicking UI)
         if (polarizationIndex !== null || dielectricAbsorptionRatio !== null) {
+             const indicesCardStartY = currentY; // Store Y before drawing
              if (currentY + 35 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } // Estimate height + footer
 
              // Card Box (optional visual cue)
-             doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
-             doc.roundedRect(rightColX - 1, currentY - 1, colWidth + 2, 32, 1.5, 1.5, 'S'); // Smaller rounding, adjusted height
+             // Draw border later after calculating height
+
              currentY += 1.5; // Padding top
 
              doc.setFontSize(11); doc.setFont(undefined, 'bold');
@@ -540,19 +541,25 @@ export function InsulationResistanceAnalyzer() {
                 return y + badgeHeight + 3; // Return next Y pos (reduced row padding)
              }
 
+             const startYPi = currentY;
              currentY = drawIndexRow('Índice de Polarización (PI):', piValue, piCondition, currentY);
              currentY = drawIndexRow('Ratio Absorción Dieléctrica (DAR):', darValue, darCondition, currentY);
-             currentY += 4; // Reduced padding after indices "card"
+             const indicesCardEndY = currentY; // Store Y after drawing content
+
+             // Draw the card border dynamically based on content height
+             doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
+             doc.roundedRect(rightColX - 1, indicesCardStartY - 1, colWidth + 2, indicesCardEndY - indicesCardStartY + 1, 1.5, 1.5, 'S'); // Adjusted height
+
+             currentY = indicesCardEndY + 3; // Padding after indices "card"
         }
 
         // Reference Tables Card (Mimicking UI)
-        currentY += 10; // Add 10mm space before reference tables
+        const refCardStartY = currentY; // Start slightly lower
         if (currentY + 70 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } // Check space for reference title + tables + footer
 
         // Card Box (optional)
-        const refCardStartY = currentY;
-        doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
-        // Calculate height later based on tables
+        // Draw border later based on table height
+        const refBorderStartY = currentY;
 
         currentY += 1.5; // Padding top
 
@@ -614,7 +621,8 @@ export function InsulationResistanceAnalyzer() {
 
         // Draw the reference card border now that we know the height
         const refCardEndY = currentY; // Y position after DAR table caption
-        doc.roundedRect(rightColX - 1, refCardStartY - 1, colWidth + 2, refCardEndY - refCardStartY + 1, 1.5, 1.5, 'S'); // Adjusted height, smaller rounding
+        doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
+        doc.roundedRect(rightColX - 1, refBorderStartY - 1, colWidth + 2, refCardEndY - refBorderStartY + 1, 1.5, 1.5, 'S'); // Adjusted height, smaller rounding
 
         currentY = refCardEndY + 3; // Update current Y below the reference card + padding
 
