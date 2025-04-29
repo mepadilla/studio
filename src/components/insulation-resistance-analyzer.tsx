@@ -277,7 +277,7 @@ export function InsulationResistanceAnalyzer() {
          doc.setFont(undefined, 'normal');
 
          // Get current date for the report
-         const printDate = format(new Date(), 'dd/MM/yyyy HH:mm');
+         const testDate = format(new Date(), 'dd/MM/yyyy HH:mm');
 
          autoTable(doc, {
            startY: currentY,
@@ -286,7 +286,7 @@ export function InsulationResistanceAnalyzer() {
              ['Nombre del Técnico:', formData.testerName],
              ['ID del Motor:', formData.motorId],
              ['Nro. de Serie del Motor:', formData.motorSerial],
-             ['Fecha de Impresión:', printDate], // Add print date here
+             ['Fecha de la Prueba:', testDate], // Changed label here
            ],
            theme: 'grid',
            styles: { fontSize: 9, cellPadding: 1.5 }, // Reduced padding
@@ -492,7 +492,7 @@ export function InsulationResistanceAnalyzer() {
              const indicesCardEndY = currentY;
 
              doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB'));
-             doc.roundedRect(rightColX - 1, indicesCardStartY - 1, colWidth + 2, indicesCardEndY - indicesCardStartY + 2, 1.5, 1.5, 'S'); // Adjusted height slightly
+             doc.roundedRect(rightColX - 1, indicesCardStartY - 1, colWidth + 2, indicesCardEndY - indicesCardStartY + 1, 1.5, 1.5, 'S'); // Adjusted height slightly
 
              currentY = indicesCardEndY + 3; // Padding after indices "card"
         }
@@ -819,6 +819,20 @@ export function InsulationResistanceAnalyzer() {
         )}
        </div>
       </CardContent>
+      <CardFooter className="bg-secondary/30 p-4 border-t">
+           <div className="container text-center text-xs text-muted-foreground">
+             © 2025, desarrollado por{' '}
+             <a
+               href="https://www.linkedin.com/in/melvin-padilla-3425106"
+               target="_blank"
+               rel="noopener noreferrer"
+               className="font-medium text-primary underline underline-offset-4 hover:text-primary/80"
+             >
+               Ing. Melvin E. Padilla
+             </a>
+             .
+           </div>
+         </CardFooter>
     </Card>
    </>
   );
