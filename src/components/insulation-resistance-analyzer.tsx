@@ -329,7 +329,7 @@ export function InsulationResistanceAnalyzer() {
         const rightColX = margin + contentWidth / 2 + 4; // Reduced gap
         const colWidth = contentWidth / 2 - 4; // Adjust col width for gap
 
-        // --- Column 1: Chart and Notes ---
+        // --- Column 1: Chart, Signatures, and Notes ---
         const chartElement = innerChartRef.current; // Use the inner chart ref here
         let leftColEndY = resultsStartY;
         if (chartElement && chartData.length > 0) {
@@ -382,9 +382,35 @@ export function InsulationResistanceAnalyzer() {
                  });
             }
 
-             // --- Descriptive Notes Section (inside a box) --- Moved Up
-             const notesStartY = currentY + 5; // Start slightly lower to avoid touching chart
+             // --- Signature Section --- Stacked Vertically --- Moved under Chart
+             const signatureStartY = currentY + 5; // Start below chart
+             if (signatureStartY + 30 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space for signatures
+             else { currentY = signatureStartY; } // Continue on same page
+
+             doc.setFontSize(9); // Smaller signature font
+             const signatureXStart = leftColX; // Align signatures to the left column start
+             const signatureLineLength = 65; // Slightly longer line
+             let signatureY = currentY;
+
+             // Tester Signature
+             doc.text('Firma del Técnico:', signatureXStart, signatureY);
+             doc.line(signatureXStart, signatureY + 4, signatureXStart + signatureLineLength, signatureY + 4);
+             doc.text(formData.testerName, signatureXStart, signatureY + 8); // Add name below line
+             signatureY += 15; // Add space between signatures
+
+             // Supervisor Signature
+             if (signatureY + 10 > pageHeight - margin) { doc.addPage(); currentY = margin; signatureY = currentY; } // Check space for second signature
+             doc.text('Firma del Supervisor:', signatureXStart, signatureY);
+             doc.line(signatureXStart, signatureY + 4, signatureXStart + signatureLineLength, signatureY + 4);
+             signatureY += 10; // Update Y position after supervisor signature
+
+             currentY = signatureY + 5; // Update main Y cursor with padding below signatures
+
+
+             // --- Descriptive Notes Section (inside a box) --- Moved Below Signatures
+             const notesStartY = currentY; // Start below signatures + padding
              if (notesStartY + 25 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space for notes + box
+             else { currentY = notesStartY; }
 
              doc.setFontSize(8); // Smaller font for the note
              doc.setFont(undefined, 'italic'); // Italicize the note
@@ -392,7 +418,7 @@ export function InsulationResistanceAnalyzer() {
 
              // Box padding
              const boxPadding = 2;
-             let textY = notesStartY + boxPadding + 3; // Start text below top border + padding
+             let textY = currentY + boxPadding + 3; // Start text below top border + padding
 
              // First Note
              const noteText1 = "El Índice de Polarización (PI) y el Ratio de Absorción Dieléctrica (DAR) evalúan la calidad del aislamiento eléctrico. El PI mide el aumento de la resistencia con el tiempo, mientras que el DAR compara la absorción inicial de corriente con la posterior. Valores altos indican un aislamiento en buen estado y seco, crucial para prevenir fallas eléctricas.";
@@ -415,13 +441,13 @@ export function InsulationResistanceAnalyzer() {
              textY += (splitNote2.length * 3.5); // Adjust Y
 
              // Calculate box height
-             const boxHeight = textY - notesStartY + boxPadding; // Total height including bottom padding
+             const boxHeight = textY - currentY + boxPadding; // Total height including bottom padding
 
              // Draw the rounded rectangle around the notes
              doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
-             doc.roundedRect(leftColX, notesStartY, colWidth, boxHeight, 1.5, 1.5, 'S'); // Draw the box
+             doc.roundedRect(leftColX, currentY, colWidth, boxHeight, 1.5, 1.5, 'S'); // Draw the box
 
-             currentY = notesStartY + boxHeight + 3; // Update current Y below the box + padding
+             currentY = currentY + boxHeight + 3; // Update current Y below the box + padding
 
              doc.setFont(undefined, 'normal'); // Reset font style
              doc.setTextColor(0, 0, 0); // Reset text color
@@ -437,7 +463,7 @@ export function InsulationResistanceAnalyzer() {
         }
 
 
-        // --- Column 2: Indices & Reference & Signatures ---
+        // --- Column 2: Indices & Reference & Formulas ---
         currentY = resultsStartY; // Reset Y to start of results section for the right column
         let rightColEndY = resultsStartY;
 
@@ -578,7 +604,7 @@ export function InsulationResistanceAnalyzer() {
 
         // --- Formula Notes Section (inside a box) --- Moved Below Reference Tables
          const formulaNotesStartY = rightColEndY + 5; // Start slightly lower
-         if (formulaNotesStartY + 20 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space + footer space
+         if (formulaNotesStartY + 20 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space + potential footer space
          else { currentY = formulaNotesStartY; } // Continue on same page
 
 
@@ -618,31 +644,8 @@ export function InsulationResistanceAnalyzer() {
 
 
 
-        // --- Move Y to below the longest column before adding signatures ---
-        currentY = Math.max(leftColEndY, rightColEndY) + 10; // Reduced space before signatures
-
-
-        // --- Signature Section --- Stacked Vertically ---
-        if (currentY + 30 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space for signatures
-        doc.setFontSize(9); // Smaller signature font
-        const signatureXStart = margin; // Align signatures to the left margin
-        const signatureLineLength = 65; // Slightly longer line
-        let signatureY = currentY;
-
-        // Tester Signature
-        doc.text('Firma del Técnico:', signatureXStart, signatureY);
-        doc.line(signatureXStart, signatureY + 4, signatureXStart + signatureLineLength, signatureY + 4);
-        doc.text(formData.testerName, signatureXStart, signatureY + 8); // Add name below line
-        signatureY += 15; // Add space between signatures
-
-        // Supervisor Signature
-        if (signatureY + 10 > pageHeight - margin) { doc.addPage(); currentY = margin; signatureY = currentY; } // Check space for second signature
-        doc.text('Firma del Supervisor:', signatureXStart, signatureY);
-        doc.line(signatureXStart, signatureY + 4, signatureXStart + signatureLineLength, signatureY + 4);
-        signatureY += 10; // Update Y position after supervisor signature
-
-        currentY = signatureY; // Update main Y cursor
-
+        // --- Move Y to below the longest column before finishing ---
+        currentY = Math.max(leftColEndY, rightColEndY) + 10; // Ensure content doesn't overlap footer, add padding
 
          // Save the PDF
          doc.save(`Reporte_Resistencia_Aislamiento_${formData.motorId || 'Motor'}.pdf`);
