@@ -253,13 +253,13 @@ export function InsulationResistanceAnalyzer() {
            headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', fontSize: 9 }, // Smaller head font
            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 45 }, 1: { cellWidth: contentWidth - 45} }, // Adjusted width
            margin: { left: margin, right: margin },
-           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; } // Remove footer call
+           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
          });
          currentY = (doc as any).lastAutoTable.finalY + 8; // Reduced space
 
 
          // --- Resistance Readings Section (4 columns) ---
-         if (currentY + 50 > pageHeight - 15) { doc.addPage(); currentY = margin; } // Estimate height check + footer space
+         if (currentY + 50 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Estimate height check
          doc.setFontSize(12); // Section title
          doc.setFont(undefined, 'bold');
          doc.text('Lecturas de Resistencia de Aislamiento', margin, currentY); // Title without units here
@@ -317,7 +317,7 @@ export function InsulationResistanceAnalyzer() {
              3: { cellWidth: 'auto', halign: 'center' }, // Center resistance column 2
            },
            margin: { left: margin, right: margin },
-           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; } // Remove footer call
+           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
          });
          currentY = (doc as any).lastAutoTable.finalY + 8; // Reduced space
 
@@ -334,7 +334,7 @@ export function InsulationResistanceAnalyzer() {
         let leftColEndY = resultsStartY;
         if (chartElement && chartData.length > 0) {
             const chartTitleY = currentY;
-            if (chartTitleY + 60 > pageHeight - 15) { doc.addPage(); currentY = margin; } // Estimate height + title + footer space
+            if (chartTitleY + 60 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Estimate height + title
             doc.setFontSize(11); // Smaller chart title
             doc.setFont(undefined, 'bold');
             doc.text('Gráfico Resistencia vs. Tiempo', leftColX, currentY);
@@ -356,7 +356,7 @@ export function InsulationResistanceAnalyzer() {
                 const pdfChartWidth = colWidth;
                 const pdfChartHeight = (imgProps.height * pdfChartWidth) / imgProps.width;
 
-                if (currentY + pdfChartHeight > pageHeight - 30) { // Check height against page end, leave room for potential signatures + footer
+                if (currentY + pdfChartHeight > pageHeight - margin) { // Check height against page end
                   doc.addPage();
                   currentY = margin;
                   // Redraw title if needed on new page
@@ -369,7 +369,7 @@ export function InsulationResistanceAnalyzer() {
                 currentY += pdfChartHeight + 3; // Reduced padding below chart
             } catch (error) {
                 console.error("Error generando imagen del gráfico:", error);
-                 if (currentY + 10 > pageHeight - 15) { doc.addPage(); currentY = margin; } // + footer space
+                 if (currentY + 10 > pageHeight - margin) { doc.addPage(); currentY = margin; }
                  doc.setTextColor(255, 0, 0); // Red for error
                  doc.setFontSize(9);
                  doc.text('Error generando imagen del gráfico.', leftColX, currentY);
@@ -382,10 +382,9 @@ export function InsulationResistanceAnalyzer() {
                  });
             }
 
-
-             // --- Descriptive Notes Section (inside a box) ---
+             // --- Descriptive Notes Section (inside a box) --- Moved Up
              const notesStartY = currentY + 5; // Start slightly lower to avoid touching chart
-             if (notesStartY + 25 > pageHeight - 15) { doc.addPage(); currentY = margin; } // Check space for notes + box + footer space
+             if (notesStartY + 25 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space for notes + box
 
              doc.setFontSize(8); // Smaller font for the note
              doc.setFont(undefined, 'italic'); // Italicize the note
@@ -398,13 +397,21 @@ export function InsulationResistanceAnalyzer() {
              // First Note
              const noteText1 = "El Índice de Polarización (PI) y el Ratio de Absorción Dieléctrica (DAR) evalúan la calidad del aislamiento eléctrico. El PI mide el aumento de la resistencia con el tiempo, mientras que el DAR compara la absorción inicial de corriente con la posterior. Valores altos indican un aislamiento en buen estado y seco, crucial para prevenir fallas eléctricas.";
              const splitNote1 = doc.splitTextToSize(noteText1, colWidth - boxPadding * 2); // Subtract padding from width
-             doc.text(splitNote1, leftColX + boxPadding, textY);
+
+             // Justify text (manual approximation for jsPDF)
+             splitNote1.forEach((line, index) => {
+                doc.text(line, leftColX + boxPadding, textY + (index * 3.5), { align: 'justify', maxWidth: colWidth - boxPadding * 2 });
+             });
              textY += (splitNote1.length * 3.5) + 2; // Adjust Y, less space after note
+
 
              // Second Note
              const noteText2 = "Para aislamientos con una resistencia significativamente elevada, los valores de PI y DAR pueden ser cercanos a 1. En estos casos, la alta resistencia constante es el principal indicador de un aislamiento en buen estado.";
              const splitNote2 = doc.splitTextToSize(noteText2, colWidth - boxPadding * 2); // Subtract padding from width
-             doc.text(splitNote2, leftColX + boxPadding, textY);
+             // Justify text (manual approximation for jsPDF)
+             splitNote2.forEach((line, index) => {
+                  doc.text(line, leftColX + boxPadding, textY + (index * 3.5), { align: 'justify', maxWidth: colWidth - boxPadding * 2 });
+             });
              textY += (splitNote2.length * 3.5); // Adjust Y
 
              // Calculate box height
@@ -420,63 +427,23 @@ export function InsulationResistanceAnalyzer() {
              doc.setTextColor(0, 0, 0); // Reset text color
 
 
-             // --- Formula Notes Section (inside a box) --- New Section
-             const formulaNotesStartY = currentY + 5; // Start slightly lower
-             if (formulaNotesStartY + 20 > pageHeight - 15) { doc.addPage(); currentY = margin; } // Check space + footer space
-
-             const formulaBoxPadding = 2;
-             let formulaTextY = formulaNotesStartY + formulaBoxPadding + 3; // Start text below top border + padding
-
-             // Formula Text
-             const formulaTitle = "Cálculo de PI y DAR:";
-             const piFormulaText = "PI: Resistencia a 10 min / Resistencia a 1 min.";
-             const darFormulaText = "DAR: Resistencia a 1 min / Resistencia a 30 seg.";
-
-             doc.setFontSize(9); // Slightly larger for title
-             doc.setFont(undefined, 'bold');
-             doc.text(formulaTitle, leftColX + formulaBoxPadding, formulaTextY);
-             formulaTextY += 5; // Space after title
-
-             doc.setFontSize(8); // Back to smaller font
-             doc.setFont(undefined, 'normal');
-
-             doc.text(piFormulaText, leftColX + formulaBoxPadding, formulaTextY);
-             formulaTextY += 4; // Space between formulas
-
-             doc.text(darFormulaText, leftColX + formulaBoxPadding, formulaTextY);
-             formulaTextY += 4; // Adjust Y
-
-
-             // Calculate box height
-             const formulaBoxHeight = formulaTextY - formulaNotesStartY; // Total height
-
-             // Draw the rounded rectangle
-             doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
-             doc.roundedRect(leftColX, formulaNotesStartY, colWidth, formulaBoxHeight, 1.5, 1.5, 'S'); // Draw the box
-
-             currentY = formulaNotesStartY + formulaBoxHeight + 3; // Update current Y below the box + padding
-
-             doc.setFont(undefined, 'normal'); // Reset font style
-             doc.setTextColor(0, 0, 0); // Reset text color
-
-
               leftColEndY = currentY; // Update the end Y of the left column
 
         } else {
-            if (currentY + 8 > pageHeight - 15) { doc.addPage(); currentY = margin; } // + footer space
+            if (currentY + 8 > pageHeight - margin) { doc.addPage(); currentY = margin; }
              doc.setFontSize(9);
             doc.text('Gráfico no disponible.', leftColX, currentY); currentY += 8;
             leftColEndY = currentY;
         }
 
 
-        // --- Column 2: Indices & Reference ---
+        // --- Column 2: Indices & Reference & Signatures ---
         currentY = resultsStartY; // Reset Y to start of results section for the right column
         let rightColEndY = resultsStartY;
 
         // Indices Results Card (Mimicking UI)
         if (polarizationIndex !== null || dielectricAbsorptionRatio !== null) {
-             if (currentY + 35 > pageHeight - 15) { doc.addPage(); currentY = margin; } // Estimate height + footer space
+             if (currentY + 35 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Estimate height
 
              // Card Box (optional visual cue)
              doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
@@ -537,7 +504,7 @@ export function InsulationResistanceAnalyzer() {
 
         // Reference Tables Card (Mimicking UI)
         currentY += 10; // Add 10mm space before reference tables
-        if (currentY + 70 > pageHeight - 15) { doc.addPage(); currentY = margin; } // Check space for reference title + tables + footer space
+        if (currentY + 70 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space for reference title + tables
 
         // Card Box (optional)
         const refCardStartY = currentY;
@@ -556,7 +523,7 @@ export function InsulationResistanceAnalyzer() {
           headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 9 }, // Increased head font size from 8.5
           tableWidth: colWidth,
           margin: { left: rightColX }, // Position table in the right column
-          didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; } // Remove footer call
+          didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
         };
 
         // PI Reference
@@ -582,7 +549,7 @@ export function InsulationResistanceAnalyzer() {
 
         // DAR Reference
         currentY += 5; // Add vertical space between reference tables
-        if (currentY + 35 > pageHeight - 15) { doc.addPage(); currentY = margin; } // Check space for DAR table + footer space
+        if (currentY + 35 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space for DAR table
         autoTable(doc, {
           startY: currentY,
           head: [['Valor DAR', 'Condición']],
@@ -603,34 +570,79 @@ export function InsulationResistanceAnalyzer() {
         });
 
         // Draw the reference card border now that we know the height
-        doc.roundedRect(rightColX - 1, refCardStartY - 1, colWidth + 2, currentY - refCardStartY + 1, 1.5, 1.5, 'S'); // Adjusted height, smaller rounding
+        const refCardEndY = currentY; // Y position after DAR table caption
+        doc.roundedRect(rightColX - 1, refCardStartY - 1, colWidth + 2, refCardEndY - refCardStartY + 1, 1.5, 1.5, 'S'); // Adjusted height, smaller rounding
 
         rightColEndY = currentY + 3; // Update end Y for the right column
+
+
+        // --- Formula Notes Section (inside a box) --- Moved Below Reference Tables
+         const formulaNotesStartY = rightColEndY + 5; // Start slightly lower
+         if (formulaNotesStartY + 20 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space + footer space
+         else { currentY = formulaNotesStartY; } // Continue on same page
+
+
+         const formulaBoxPadding = 2;
+         let formulaTextY = currentY + formulaBoxPadding + 3; // Start text below top border + padding
+
+         // Formula Text
+         const formulaTitle = "Cálculo de PI y DAR:";
+         const piFormulaText = "PI: Resistencia a 10 min / Resistencia a 1 min.";
+         const darFormulaText = "DAR: Resistencia a 1 min / Resistencia a 30 seg.";
+
+         doc.setFontSize(9); // Normal font size for title
+         doc.setFont(undefined, 'bold');
+         doc.text(formulaTitle, rightColX + formulaBoxPadding, formulaTextY);
+         formulaTextY += 5; // Space after title
+
+         doc.setFontSize(8.5); // Slightly larger font for formulas
+         doc.setFont(undefined, 'normal');
+
+         doc.text(piFormulaText, rightColX + formulaBoxPadding, formulaTextY);
+         formulaTextY += 5; // Space between formulas (Increased slightly)
+
+         doc.text(darFormulaText, rightColX + formulaBoxPadding, formulaTextY);
+         formulaTextY += 5; // Adjust Y
+
+
+         // Calculate box height
+         const formulaBoxHeight = formulaTextY - currentY; // Total height
+
+         // Draw the rounded rectangle
+         doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); // Border color approx
+         doc.roundedRect(rightColX -1, currentY -1, colWidth + 2, formulaBoxHeight +2, 1.5, 1.5, 'S'); // Draw the box
+
+
+         currentY = formulaTextY + 3; // Update current Y below the box + padding
+         rightColEndY = currentY; // Update end Y for the right column
+
 
 
         // --- Move Y to below the longest column before adding signatures ---
         currentY = Math.max(leftColEndY, rightColEndY) + 10; // Reduced space before signatures
 
 
-        // --- Signature Section ---
-        if (currentY + 25 > pageHeight - 15) { doc.addPage(); currentY = margin; } // Check space for signatures + footer space
+        // --- Signature Section --- Stacked Vertically ---
+        if (currentY + 30 > pageHeight - margin) { doc.addPage(); currentY = margin; } // Check space for signatures
         doc.setFontSize(9); // Smaller signature font
-        const signatureY = currentY;
-        const signatureXStart = margin;
-        const signatureXEnd = pageWidth - margin;
-        const signatureLineLength = 55; // Slightly shorter line
+        const signatureXStart = margin; // Align signatures to the left margin
+        const signatureLineLength = 65; // Slightly longer line
+        let signatureY = currentY;
 
         // Tester Signature
         doc.text('Firma del Técnico:', signatureXStart, signatureY);
         doc.line(signatureXStart, signatureY + 4, signatureXStart + signatureLineLength, signatureY + 4);
         doc.text(formData.testerName, signatureXStart, signatureY + 8); // Add name below line
+        signatureY += 15; // Add space between signatures
 
-        // Supervisor Signature (Aligned Right)
-        const supervisorXStart = signatureXEnd - signatureLineLength;
-        doc.text('Firma del Supervisor:', supervisorXStart, signatureY);
-        doc.line(supervisorXStart, signatureY + 4, supervisorXStart + signatureLineLength, signatureY + 4);
+        // Supervisor Signature
+        if (signatureY + 10 > pageHeight - margin) { doc.addPage(); currentY = margin; signatureY = currentY; } // Check space for second signature
+        doc.text('Firma del Supervisor:', signatureXStart, signatureY);
+        doc.line(signatureXStart, signatureY + 4, signatureXStart + signatureLineLength, signatureY + 4);
+        signatureY += 10; // Update Y position after supervisor signature
 
-         // Footer removed
+        currentY = signatureY; // Update main Y cursor
+
 
          // Save the PDF
          doc.save(`Reporte_Resistencia_Aislamiento_${formData.motorId || 'Motor'}.pdf`);
