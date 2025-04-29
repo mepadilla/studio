@@ -37,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es"> {/* Changed lang to Spanish */}
+    <html lang="es">{/* Removed potential leading/trailing whitespace inside html tag */}
       <body className={cn(
         geistSans.variable,
         geistMono.variable,
@@ -99,7 +99,7 @@ export default function RootLayout({
         </main>
          {/* Footer Added */}
          <footer className="mt-auto py-4 border-t bg-secondary/50">
-           <div className="container text-center text-sm text-muted-foreground">
+           <div className="container text-center text-xs text-muted-foreground">
              © 2025, desarrollado por{' '}
              <a
                href="https://www.linkedin.com/in/melvin-padilla-3425106"
