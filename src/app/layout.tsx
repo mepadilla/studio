@@ -64,12 +64,26 @@ export default function RootLayout({
                              </Link>
                            </MenubarItem>
                            <MenubarSeparator />
-                           {/* Link to the new Technical Standards page */}
-                           <MenubarItem asChild>
-                             <Link href="/documentation/technical-standards" className="w-full">
-                                 Normas Técnicas
-                             </Link>
-                           </MenubarItem>
+                            {/* "Normas Técnicas" is now a sub-trigger */}
+                            <MenubarSub>
+                              <MenubarSubTrigger>Normas Técnicas</MenubarSubTrigger>
+                              <MenubarSubContent>
+                                {/* Link to the main technical standards page */}
+                                <MenubarItem asChild>
+                                  <Link href="/documentation/technical-standards" className="w-full">
+                                      General (En Construcción)
+                                  </Link>
+                                </MenubarItem>
+                                <MenubarSeparator />
+                                {/* Link to the new PI/DAR IEEE standard page */}
+                                <MenubarItem asChild>
+                                  <Link href="/documentation/technical-standards/pi-dar-ieee-43-2000" className="w-full">
+                                      PI - DAR - IEEE Std 43-2000
+                                  </Link>
+                                </MenubarItem>
+                                {/* Add more technical standard links here */}
+                              </MenubarSubContent>
+                            </MenubarSub>
                            {/* Add more documentation links here */}
                        </MenubarContent>
                    </MenubarMenu>
