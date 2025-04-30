@@ -37,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">{/* Removed potential leading/trailing whitespace inside html tag */}
+    <html lang="es">
       <body className={cn(
         geistSans.variable,
         geistMono.variable,
@@ -54,11 +54,24 @@ export default function RootLayout({
                          {/* No content needed as it links directly */}
                      </MenubarMenu>
                    <MenubarMenu>
-                       {/* Wrap MenubarTrigger in Link */}
-                       <Link href="/documentation" passHref legacyBehavior>
-                         <MenubarTrigger>Documentación</MenubarTrigger>
-                       </Link>
-                       {/* No content needed as it links directly */}
+                       {/* "Documentación" is now a trigger for a submenu */}
+                       <MenubarTrigger>Documentación</MenubarTrigger>
+                       <MenubarContent>
+                           {/* Link to the main documentation page */}
+                           <MenubarItem asChild>
+                             <Link href="/documentation" className="w-full">
+                                 General (En Construcción)
+                             </Link>
+                           </MenubarItem>
+                           <MenubarSeparator />
+                           {/* Link to the new Technical Standards page */}
+                           <MenubarItem asChild>
+                             <Link href="/documentation/technical-standards" className="w-full">
+                                 Normas Técnicas
+                             </Link>
+                           </MenubarItem>
+                           {/* Add more documentation links here */}
+                       </MenubarContent>
                    </MenubarMenu>
                    <MenubarMenu>
                        <MenubarTrigger>Herramientas</MenubarTrigger>
