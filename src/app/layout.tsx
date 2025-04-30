@@ -38,6 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
+      {/* Remove extra whitespace here */}
       <body className={cn(
         geistSans.variable,
         geistMono.variable,
@@ -57,32 +58,20 @@ export default function RootLayout({
                        {/* "Documentación" is now a trigger for a submenu */}
                        <MenubarTrigger>Documentación</MenubarTrigger>
                        <MenubarContent>
-                           {/* REMOVED Link to the main documentation page */}
-                           {/*
-                           <MenubarItem asChild>
-                             <Link href="/documentation" className="w-full">
-                                 General (En Construcción)
-                             </Link>
-                           </MenubarItem>
-                           <MenubarSeparator />
-                           */}
-                            {/* "Normas Técnicas" is now a sub-trigger */}
+                           {/* "Normas Técnicas" is now a sub-trigger */}
                             <MenubarSub>
                               <MenubarSubTrigger>Normas Técnicas</MenubarSubTrigger>
                               <MenubarSubContent>
-                                {/* REMOVED Link to the main technical standards page */}
-                                {/*
-                                <MenubarItem asChild>
-                                  <Link href="/documentation/technical-standards" className="w-full">
-                                      General (En Construcción)
-                                  </Link>
-                                </MenubarItem>
-                                <MenubarSeparator />
-                                */}
-                                {/* Link to the new PI/DAR IEEE standard page */}
+                                {/* Link to the PI/DAR IEEE standard page */}
                                 <MenubarItem asChild>
                                   <Link href="/documentation/technical-standards/pi-dar-ieee-43-2000" className="w-full">
                                       PI - DAR - IEEE Std 43-2000
+                                  </Link>
+                                </MenubarItem>
+                                 {/* Link to the new Voltage Derating NEMA MG1 page */}
+                                <MenubarItem asChild>
+                                  <Link href="/documentation/technical-standards/voltage-derating-nema-mg1" className="w-full">
+                                      Derrateo de Voltaje - NEMA MG1
                                   </Link>
                                 </MenubarItem>
                                 {/* Add more technical standard links here */}
