@@ -276,7 +276,7 @@ export function InsulationResistanceAnalyzer() {
          doc.text('Detalles de la Prueba', margin, currentY);
          currentY += 5; // Reduced space
          doc.setFontSize(9); // Smaller table font
-         doc.setFont(undefined, 'normal');
+         doc.setFont(undefined, 'normal'); // Table Font
 
          // Get current date for the report
          const testDate = format(new Date(), 'dd/MM/yyyy HH:mm');
@@ -307,7 +307,7 @@ export function InsulationResistanceAnalyzer() {
          doc.text('Lecturas de Resistencia de Aislamiento', margin, currentY); // Title without units here
          currentY += 5; // Reduced space
          doc.setFontSize(9); // Smaller table font
-         doc.setFont(undefined, 'normal');
+         doc.setFont(undefined, 'normal'); // Readings Font
 
          // Prepare body data for the 4-column layout
          const readingsBody4Col: (string | number)[][] = [];
@@ -385,8 +385,8 @@ export function InsulationResistanceAnalyzer() {
 
             try {
                 // Add a small delay to ensure chart rendering completes before canvas capture
-                await new Promise(resolve => setTimeout(resolve, 300)); // 300ms delay
-                const canvas = await html2canvas(chartElement, { scale: 1.8, backgroundColor: '#ffffff', logging: false, useCORS: true });
+                await new Promise(resolve => setTimeout(resolve, 300));
+                const canvas = await html2canvas(chartElement, { scale: 1.6, backgroundColor: '#ffffff', logging: false, useCORS: true });
                 const imgData = canvas.toDataURL('image/png');
                 const imgProps = doc.getImageProperties(imgData);
                 const pdfChartWidth = colWidth; // Use full column width for chart
@@ -427,7 +427,7 @@ export function InsulationResistanceAnalyzer() {
             }
 
             doc.setFontSize(8); doc.setFont(undefined, 'italic'); doc.setTextColor(100, 100, 100);
-            const boxPadding = 2;
+            const boxPadding = 2; // Notes font size
             let textY = currentY + boxPadding + 3; // Start Y for text inside box
 
             // Function to draw text with bold parts
@@ -690,7 +690,7 @@ export function InsulationResistanceAnalyzer() {
          const testerSigX = signatureStartX;
          doc.text('Firma del Técnico:', testerSigX, signatureStartY);
          doc.line(testerSigX, signatureStartY + 4, testerSigX + signatureLineLength, signatureStartY + 4); // Signature line
-         doc.text(formData.testerName, testerSigX, signatureStartY + 8); // Tester name below line
+         // doc.text(formData.testerName, testerSigX, signatureStartY + 8); // Tester name below line - REMOVED
 
          // Supervisor Signature (Right)
          const supervisorSigX = testerSigX + signatureWidth + signatureGap;
