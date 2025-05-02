@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { AlertTriangle } from 'lucide-react'; // Icon
+import Image from 'next/image';
 
 export default function VoltageDeratingNemaPage() {
   return (
@@ -10,7 +11,8 @@ export default function VoltageDeratingNemaPage() {
         <CardHeader className="bg-primary text-primary-foreground p-6">
            <div className="flex items-center space-x-3">
              <AlertTriangle className="h-8 w-8" /> {/* Using AlertTriangle as a placeholder icon */}
-             <CardTitle className="text-2xl font-bold">Derrateo de Voltaje (NEMA MG1)</CardTitle>
+             {/* Updated Title */}
+             <CardTitle className="text-2xl font-bold">Desbalance de Voltaje (NEMA MG1)</CardTitle>
            </div>
           <CardDescription className="text-primary-foreground/90 mt-2">
             Resumen de los conceptos clave de la norma NEMA MG1 sobre desbalance de voltaje y derrateo de motores.
@@ -65,8 +67,19 @@ export default function VoltageDeratingNemaPage() {
               Para calcular la nueva potencia del motor (reclasificada), primero se calcula el <strong className="text-primary/90">Factor de Reclasificación (Fr)</strong>.
             </p>
             <p className="text-foreground/90 leading-relaxed mt-3">
-              El Factor de Reclasificación (Fr) se obtiene utilizando la Figura 2.12 (de la norma NEMA MG1), que muestra la relación entre el desbalance de voltaje y Fr. Se observa que:
+              El Factor de Reclasificación (Fr) se obtiene utilizando la figura que se muestra a continuación (similar a la Figura 2.12 de NEMA MG1), que muestra la relación entre el desbalance de voltaje y Fr. Se observa que:
             </p>
+            {/* Image Display */}
+             <div className="my-4 flex justify-center">
+                <Image
+                    src="/images/nema_derating_factor.png" // Path to the image in the public folder
+                    alt="Factor de Reclasificación NEMA MG1"
+                    width={400} // Adjust width as needed
+                    height={300} // Adjust height as needed
+                    className="rounded-md shadow-md"
+                    data-ai-hint="voltage derating factor graph"
+                 />
+             </div>
              <ul className="list-disc list-inside text-foreground/90 space-y-1 pl-4 mt-2 leading-relaxed">
                 <li>Hasta un 1% de desbalance, el factor es uno (no hay problema).</li>
                 <li>Un 2% de desbalance corresponde a un Fr de 0.96.</li>
@@ -112,7 +125,7 @@ export default function VoltageDeratingNemaPage() {
             </p>
             <ol className="list-decimal list-inside text-foreground/90 space-y-1 pl-4 mt-2 leading-relaxed">
               <li>Calcular el desbalance de tensión utilizando la definición NEMA (Ecuación mostrada en sección 1).</li>
-              <li>Con el desbalance calculado y la Figura 2.12 (NEMA MG1), estimar el factor de reclasificación (Fr).</li>
+              <li>Con el desbalance calculado y la figura del Factor de Reclasificación (similar a Figura 2.12 NEMA MG1), estimar el factor de reclasificación (Fr).</li>
               <li>Usando el Fr y la fórmula P<sub>r</sub> = Fr * P<sub>N</sub>, estimar la potencia reclasificada (P<sub>r</sub>).</li>
               <li>Finalmente, usando la fórmula η<sub>C</sub> = P<sub>r</sub> / (P<sub>r</sub> + Perd<sub>N</sub>), evaluar la eficiencia corregida (η<sub>C</sub>).</li>
             </ol>
