@@ -43,6 +43,7 @@ export default function VoltageDeratingNemaPage() {
             <p className="text-foreground/90 leading-relaxed mt-3">
               Esta definición calcula el porcentaje de desbalance como la relación entre la máxima desviación del voltaje respecto al voltaje promedio y el voltaje promedio, multiplicado por 100:
             </p>
+            {/* Added overflow-x-auto to prevent text cutoff on mobile */}
             <pre className="text-center font-mono text-sm my-3 p-2 bg-secondary/50 rounded-md overflow-x-auto">
               %Desbalance = ( (max. desviación volt. respecto al volt. promedio) / (voltaje promedio) ) * 100
             </pre>
@@ -85,6 +86,7 @@ export default function VoltageDeratingNemaPage() {
             <p className="text-foreground/90 leading-relaxed mt-3">
               La potencia reclasificada (P<sub>r</sub>) se calcula multiplicando la potencia nominal (P<sub>N</sub>) por el Factor de Reclasificación (Fr):
             </p>
+             {/* Added overflow-x-auto */}
             <pre className="text-center font-mono text-sm my-3 p-2 bg-secondary/50 rounded-md overflow-x-auto">
               P<sub>r</sub> = Fr * P<sub>N</sub>
             </pre>
@@ -98,12 +100,14 @@ export default function VoltageDeratingNemaPage() {
             <p className="text-foreground/90 leading-relaxed">
               Las pérdidas nominales del motor (Perd<sub>N</sub>) se calculan utilizando la potencia nominal (P<sub>N</sub>) y la eficiencia nominal (η<sub>N</sub>):
             </p>
+             {/* Added overflow-x-auto */}
             <pre className="text-center font-mono text-sm my-3 p-2 bg-secondary/50 rounded-md overflow-x-auto">
               Perd<sub>N</sub> = P<sub>N</sub> * ( (1 - η<sub>N</sub>) / η<sub>N</sub> )
             </pre>
              <p className="text-foreground/90 leading-relaxed mt-3">
                Considerando que las pérdidas nominales son las máximas que el motor puede disipar, la eficiencia corregida (η<sub>C</sub>) se calcula utilizando la potencia reclasificada (P<sub>r</sub>) y las pérdidas nominales (Perd<sub>N</sub>):
              </p>
+             {/* Added overflow-x-auto */}
             <pre className="text-center font-mono text-sm my-3 p-2 bg-secondary/50 rounded-md overflow-x-auto">
               η<sub>C</sub> = P<sub>r</sub> / (P<sub>r</sub> + Perd<sub>N</sub>)
             </pre>
@@ -132,4 +136,3 @@ export default function VoltageDeratingNemaPage() {
     </ScrollArea>
   );
 }
-
