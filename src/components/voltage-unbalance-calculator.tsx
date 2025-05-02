@@ -5,7 +5,7 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
-import { Calculator, AlertTriangle, Percent, TrendingDown } from 'lucide-react'; // Import icons
+import { Calculator, AlertTriangle, Percent, TrendingDown, Power, Bolt } from 'lucide-react'; // Import icons including Power and Bolt
 
 import { Button } from '@/components/ui/button';
 import {
@@ -45,6 +45,14 @@ const formSchema = z.object({
     .number({ invalid_type_error: 'Debe ser un número' })
     .positive('Debe ser positivo')
     .gt(0, 'Debe ser mayor que 0'),
+  motorHp: z.coerce // Added motor HP field
+    .number({ invalid_type_error: 'Debe ser un número' })
+    .positive('Debe ser positivo')
+    .optional(), // Optional for now
+  nominalVoltage: z.coerce // Added nominal voltage field
+    .number({ invalid_type_error: 'Debe ser un número' })
+    .positive('Debe ser positivo')
+    .optional(), // Optional for now
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -121,6 +129,8 @@ export function VoltageUnbalanceCalculator() {
       vab: '',
       vbc: '',
       vca: '',
+      motorHp: '', // Added default value
+      nominalVoltage: '', // Added default value
     },
     mode: 'onBlur', // Validate on blur
   });
@@ -163,7 +173,7 @@ export function VoltageUnbalanceCalculator() {
   };
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
-    console.log('Formulario Enviado:', data);
+    console.log('Formulario Enviado:', data); // Includes new fields now
     calculateUnbalance(data);
   };
 
@@ -177,16 +187,68 @@ export function VoltageUnbalanceCalculator() {
             Calculadora de Desbalance de Voltaje (NEMA)
           </CardTitle>
           <CardDescription className="text-primary-foreground/80">
-            Introduce los voltajes de línea para calcular el % de desbalance y el factor de reclasificación.
+            Introduce los datos del motor y los voltajes de línea para calcular el % de desbalance y el factor de reclasificación.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6 bg-secondary/30">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Motor Details Section - Added */}
+               <Card className="bg-card shadow-md rounded-md">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-primary">Datos del Motor</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="motorHp"
+                      render={({ field, fieldState }) => (
+                        <FormItem>
+                           <FormLabel className="text-foreground/80 flex items-center">
+                             <Power className="mr-1 h-4 w-4"/> Potencia (HP)
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="any"
+                              placeholder="Ej: 100"
+                              {...field}
+                              className={cn("rounded-md", fieldState.error && "border-destructive focus-visible:ring-destructive")}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="nominalVoltage"
+                      render={({ field, fieldState }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground/80 flex items-center">
+                             <Bolt className="mr-1 h-4 w-4"/> Voltaje Nominal (V)
+                           </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="any"
+                              placeholder="Ej: 480"
+                              {...field}
+                              className={cn("rounded-md", fieldState.error && "border-destructive focus-visible:ring-destructive")}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+               </Card>
+
+
               {/* Voltage Inputs Section */}
               <Card className="bg-card shadow-md rounded-md">
                 <CardHeader>
-                  <CardTitle className="text-lg text-primary">Voltajes Línea a Línea (V)</CardTitle>
+                  <CardTitle className="text-lg text-primary">Voltajes Medidos Línea a Línea (V)</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
