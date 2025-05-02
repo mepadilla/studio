@@ -91,6 +91,12 @@ export default function RootLayout({
                                    Analizador Resistencia Aislamiento
                                </Link>
                              </MenubarItem>
+                              {/* New Link for Voltage Unbalance Calculator */}
+                              <MenubarItem asChild>
+                                <Link href="/tools/electrical/voltage-unbalance" className="w-full">
+                                    Calculadora Desbalance de Voltaje
+                                </Link>
+                              </MenubarItem>
                              {/* Add more electrical tools here */}
                            </MenubarSubContent>
                          </MenubarSub>
