@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { AlertTriangle } from 'lucide-react'; // Icon
-import Image from 'next/image';
+import { DeratingFactorChart } from '@/components/derating-factor-chart'; // Import the new chart component
 
 export default function VoltageDeratingNemaPage() {
   return (
@@ -69,7 +69,11 @@ export default function VoltageDeratingNemaPage() {
             <p className="text-foreground/90 leading-relaxed mt-3">
               El Factor de Reclasificación (Fr) se obtiene utilizando la figura que se muestra a continuación (similar a la Figura 2.12 de NEMA MG1), que muestra la relación entre el desbalance de voltaje y Fr. Se observa que:
             </p>
-            {/* Image Display Removed */}
+            {/* Add the chart component here */}
+            <div className="my-4 p-4 border rounded-md bg-card shadow-sm">
+              <h3 className="text-lg font-medium text-center mb-2 text-primary/90">Factor de Reclasificación vs. Desbalance de Tensión</h3>
+              <DeratingFactorChart />
+            </div>
              <ul className="list-disc list-inside text-foreground/90 space-y-1 pl-4 mt-2 leading-relaxed">
                 <li>Hasta un 1% de desbalance, el factor es uno (no hay problema).</li>
                 <li>Un 2% de desbalance corresponde a un Fr de 0.96.</li>
