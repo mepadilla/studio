@@ -5,7 +5,7 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
-import { Calculator, AlertTriangle, Percent, TrendingDown, Power, Bolt, Gauge } from 'lucide-react'; // Import icons including Power, Bolt, and Gauge
+import { Calculator, AlertTriangle, Percent, TrendingDown, Power, Bolt, Gauge, ScanLine } from 'lucide-react'; // Import icons including Power, Bolt, Gauge and ScanLine
 
 import { Button } from '@/components/ui/button';
 import {
@@ -33,6 +33,7 @@ import Link from 'next/link';
 
 // Validation schema using Zod with Spanish messages
 const formSchema = z.object({
+  motorId: z.string().min(1, 'ID del motor es requerido'), // Added motor ID field
   vab: z.coerce // Coerce to number for validation
     .number({ invalid_type_error: 'Debe ser un número' })
     .positive('Debe ser positivo')
@@ -128,6 +129,7 @@ export function VoltageUnbalanceCalculator() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      motorId: '', // Added motor ID default
       vab: '',
       vbc: '',
       vca: '',
@@ -227,14 +229,34 @@ export function VoltageUnbalanceCalculator() {
                   <CardHeader>
                     <CardTitle className="text-lg text-primary">Datos del Motor</CardTitle>
                   </CardHeader>
-                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                     <FormField
+                      control={form.control}
+                      name="motorId"
+                      render={({ field, fieldState }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground/80 flex items-center">
+                            <ScanLine className="mr-1 h-4 w-4"/> ID del Motor
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="text"
+                              placeholder="Ej: Bomba Pozo 1"
+                              {...field}
+                              className={cn("rounded-md", fieldState.error && "border-destructive focus-visible:ring-destructive")}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="motorHp"
                       render={({ field, fieldState }) => (
                         <FormItem>
                            <FormLabel className="text-foreground/80 flex items-center">
-                             <Power className="mr-1 h-4 w-4"/> Potencia Nominal (HP) <span className="text-muted-foreground/80 ml-1">(Requerido para cálculo de potencia reclasificada)</span>
+                             <Power className="mr-1 h-4 w-4"/> Potencia Nominal (HP) <span className="text-muted-foreground/80 ml-1 text-xs">(Opcional)</span>
                           </FormLabel>
                           <FormControl>
                             <Input
@@ -255,7 +277,7 @@ export function VoltageUnbalanceCalculator() {
                       render={({ field, fieldState }) => (
                         <FormItem>
                           <FormLabel className="text-foreground/80 flex items-center">
-                             <Bolt className="mr-1 h-4 w-4"/> Voltaje Nominal (V) <span className="text-muted-foreground/80 ml-1">(Requerido para cálculo de desviación)</span>
+                             <Bolt className="mr-1 h-4 w-4"/> Voltaje Nominal (V) <span className="text-muted-foreground/80 ml-1 text-xs">(Opcional)</span>
                            </FormLabel>
                           <FormControl>
                             <Input
@@ -415,7 +437,7 @@ export function VoltageUnbalanceCalculator() {
                              {deratedPowerHp !== null ? deratedPowerHp.toFixed(2) : 'N/D'}
                            </span>
                         </div>
-                        {deratedPowerHp === null && form.getValues().motorHp === '' && (
+                        {deratedPowerHp === null && (form.getValues().motorHp === '' || !form.getValues().motorHp) && ( // Check if motorHp is empty or undefined/null
                              <p className="text-xs text-muted-foreground mt-1">
                                 Introduce la potencia nominal (HP) del motor para calcular la potencia reclasificada.
                              </p>
@@ -434,7 +456,7 @@ export function VoltageUnbalanceCalculator() {
                              {voltageDeviation !== null ? `${voltageDeviation.toFixed(2)} %` : 'N/D'}
                          </span>
                       </div>
-                      {voltageDeviation === null && form.getValues().nominalVoltage === '' && (
+                      {voltageDeviation === null && (form.getValues().nominalVoltage === '' || !form.getValues().nominalVoltage) && ( // Check if nominalVoltage is empty or undefined/null
                            <p className="text-xs text-muted-foreground mt-1">
                               Introduce el voltaje nominal del motor para calcular la desviación.
                            </p>
