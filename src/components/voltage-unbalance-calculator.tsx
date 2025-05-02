@@ -341,7 +341,10 @@ export function VoltageUnbalanceCalculator() {
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 1.2 },
         headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', fontSize: 8 },
-        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 }, 1: { cellWidth: contentWidth - 60, halign: 'right' } },
+        columnStyles: {
+             0: { fontStyle: 'bold', cellWidth: 60 },
+             1: { cellWidth: contentWidth - 60, halign: 'center' } // Center align Voltaje column
+         },
         margin: { left: margin, right: margin },
         didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
       });
@@ -383,7 +386,10 @@ export function VoltageUnbalanceCalculator() {
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 1.2 },
         headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', fontSize: 8 },
-        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 }, 1: { cellWidth: contentWidth - 60, halign: 'right' } },
+         columnStyles: {
+             0: { fontStyle: 'bold', cellWidth: 60 },
+             1: { cellWidth: contentWidth - 60, halign: 'center' } // Center align Valor column
+         },
         margin: { left: margin, right: margin },
         didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
       });
@@ -775,3 +781,4 @@ export function VoltageUnbalanceCalculator() {
     </>
   );
 }
+
