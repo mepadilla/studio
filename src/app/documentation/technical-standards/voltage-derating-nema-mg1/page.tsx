@@ -67,7 +67,7 @@ export default function VoltageDeratingNemaPage() {
               Para calcular la nueva potencia del motor (reclasificada), primero se calcula el <strong className="text-primary/90">Factor de Reclasificación (Fr)</strong>.
             </p>
             <p className="text-foreground/90 leading-relaxed mt-3">
-              El Factor de Reclasificación (Fr) se obtiene utilizando la figura que se muestra a continuación (similar a la Figura 2.12 de NEMA MG1), que muestra la relación entre el desbalance de voltaje y Fr. Se observa que:
+               El factor de Reclasificación se obtiene a partir de la gráfica anexa (Tomada de NEMA MG1), que muestra la relación entre el desbalance de voltaje y el FR. {/* Updated Text Here */}
             </p>
             {/* Add the chart component here */}
             <div className="my-4 p-4 border rounded-md bg-card shadow-sm">
@@ -132,3 +132,4 @@ export default function VoltageDeratingNemaPage() {
     </ScrollArea>
   );
 }
+
