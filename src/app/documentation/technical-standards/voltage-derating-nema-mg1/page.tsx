@@ -69,17 +69,7 @@ export default function VoltageDeratingNemaPage() {
             <p className="text-foreground/90 leading-relaxed mt-3">
               El Factor de Reclasificación (Fr) se obtiene utilizando la figura que se muestra a continuación (similar a la Figura 2.12 de NEMA MG1), que muestra la relación entre el desbalance de voltaje y Fr. Se observa que:
             </p>
-            {/* Image Display */}
-             <div className="my-4 flex justify-center">
-                <Image
-                    src="/images/nema_derating_factor.png" // Path to the image in the public folder
-                    alt="Factor de Reclasificación NEMA MG1"
-                    width={400} // Adjust width as needed
-                    height={300} // Adjust height as needed
-                    className="rounded-md shadow-md"
-                    data-ai-hint="voltage derating factor graph"
-                 />
-             </div>
+            {/* Image Display Removed */}
              <ul className="list-disc list-inside text-foreground/90 space-y-1 pl-4 mt-2 leading-relaxed">
                 <li>Hasta un 1% de desbalance, el factor es uno (no hay problema).</li>
                 <li>Un 2% de desbalance corresponde a un Fr de 0.96.</li>
