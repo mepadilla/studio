@@ -38,7 +38,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      {/* Remove extra whitespace here */}
       <body className={cn(
         geistSans.variable,
         geistMono.variable,
