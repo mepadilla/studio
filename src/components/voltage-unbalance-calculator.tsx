@@ -5,7 +5,11 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
-import { Calculator, AlertTriangle, Percent, TrendingDown, Power, Bolt, Gauge, ScanLine } from 'lucide-react'; // Import icons including Power, Bolt, Gauge and ScanLine
+import { Calculator, AlertTriangle, Percent, TrendingDown, Power, Bolt, Gauge, ScanLine, FileDown } from 'lucide-react'; // Added FileDown
+import jsPDF from 'jspdf'; // Added jsPDF
+import autoTable from 'jspdf-autotable'; // Added autoTable
+import html2canvas from 'html2canvas'; // Added html2canvas
+import { format } from 'date-fns'; // Added date-fns
 
 import { Button } from '@/components/ui/button';
 import {
@@ -30,6 +34,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { DeratingFactorChart } from '@/components/derating-factor-chart'; // Import chart for PDF
 
 // Validation schema using Zod with Spanish messages
 const formSchema = z.object({
@@ -49,11 +54,13 @@ const formSchema = z.object({
   motorHp: z.coerce // Added motor HP field
     .number({ invalid_type_error: 'Debe ser un número' })
     .positive('La potencia debe ser positiva')
-    .optional(), // Optional for now
+    .optional()
+    .or(z.literal('')), // Allow empty string
   nominalVoltage: z.coerce // Added nominal voltage field
     .number({ invalid_type_error: 'Debe ser un número' })
     .positive('El voltaje debe ser positivo')
-    .optional(), // Optional for now
+    .optional()
+    .or(z.literal('')), // Allow empty string
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -122,7 +129,10 @@ export function VoltageUnbalanceCalculator() {
   const [voltageDeviation, setVoltageDeviation] = React.useState<number | null>(null); // State for voltage deviation
   const [deratedPowerHp, setDeratedPowerHp] = React.useState<number | null>(null); // State for derated power
   const [showResults, setShowResults] = React.useState(false);
+  const [formData, setFormData] = React.useState<FormData | null>(null); // Store form data for PDF
+  const [isLoadingPdf, setIsLoadingPdf] = React.useState(false); // PDF loading state
   const resultsRef = React.useRef<HTMLDivElement>(null);
+  const chartRef = React.useRef<HTMLDivElement>(null); // Ref for chart capture
 
   const { toast } = useToast();
 
@@ -141,10 +151,10 @@ export function VoltageUnbalanceCalculator() {
 
   const calculateUnbalance = (data: FormData) => {
     const { vab, vbc, vca, nominalVoltage, motorHp } = data; // Include motorHp
-    const voltages = [vab, vbc, vca];
+    const voltages = [Number(vab), Number(vbc), Number(vca)]; // Ensure numbers
 
     // Calculate average voltage
-    const averageVoltage = (vab + vbc + vca) / 3;
+    const averageVoltage = (Number(vab) + Number(vbc) + Number(vca)) / 3;
 
     // Calculate percentage unbalance (NEMA definition)
     let unbalancePercent = 0;
@@ -160,8 +170,9 @@ export function VoltageUnbalanceCalculator() {
 
     // Calculate voltage deviation from nominal
     let deviationPercent: number | null = null;
-    if (nominalVoltage && nominalVoltage > 0 && averageVoltage > 0) {
-        deviationPercent = ((averageVoltage - nominalVoltage) / nominalVoltage) * 100;
+    const numNominalVoltage = Number(nominalVoltage);
+    if (numNominalVoltage && numNominalVoltage > 0 && averageVoltage > 0) {
+        deviationPercent = ((averageVoltage - numNominalVoltage) / numNominalVoltage) * 100;
         setVoltageDeviation(parseFloat(deviationPercent.toFixed(2)));
     } else {
         setVoltageDeviation(null); // Reset if nominal voltage is not valid
@@ -172,8 +183,9 @@ export function VoltageUnbalanceCalculator() {
     setDeratingFactor(factor);
 
     // Calculate derated power
-    if (motorHp && motorHp > 0 && factor !== null) {
-        const calculatedDeratedPower = motorHp * factor;
+    const numMotorHp = Number(motorHp);
+    if (numMotorHp && numMotorHp > 0 && factor !== null) {
+        const calculatedDeratedPower = numMotorHp * factor;
         setDeratedPowerHp(parseFloat(calculatedDeratedPower.toFixed(2)));
     } else {
         setDeratedPowerHp(null); // Reset if motorHp or factor is invalid
@@ -181,6 +193,7 @@ export function VoltageUnbalanceCalculator() {
 
 
     setShowResults(true);
+    setFormData(data); // Store data for PDF generation
 
     toast({
       title: "Cálculo Exitoso",
@@ -208,6 +221,249 @@ export function VoltageUnbalanceCalculator() {
       return "text-destructive"; // Red for > +/- 10%
   }
 
+  // PDF Generation Function
+  const generatePDF = async () => {
+    if (!formData || voltageUnbalance === null) {
+      toast({
+        title: "Error",
+        description: "No hay datos calculados para generar el PDF. Por favor, calcula los índices primero.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsLoadingPdf(true);
+    toast({
+      title: "Generando PDF...",
+      description: "Por favor espera.",
+    });
+
+    try {
+      const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+      const pageHeight = doc.internal.pageSize.height;
+      const pageWidth = doc.internal.pageSize.width;
+      const margin = 15;
+      const footerHeight = 15;
+      const contentWidth = pageWidth - margin * 2;
+      let currentY = margin;
+
+      // --- Add Footer Function (Copied from Insulation Resistance Analyzer) ---
+       const addFooter = (docInstance: jsPDF) => {
+            const pageCount = docInstance.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+            docInstance.setPage(i);
+            docInstance.setFontSize(7); // Smaller footer font
+            docInstance.setTextColor(150);
+            const footerY = pageHeight - margin + 5; // Position slightly below bottom margin
+
+            // Left part: Copyright
+            const copyrightText = "© 2025, desarrollado por ";
+            docInstance.text(copyrightText, margin, footerY, { align: 'left' });
+
+            // Middle part: Link
+            const linkText = "Ing. Melvin E. Padilla";
+            const linkUrl = "https://www.linkedin.com/in/melvin-padilla-3425106";
+            const linkTextWidth = docInstance.getTextWidth(linkText);
+            const copyrightTextWidth = docInstance.getTextWidth(copyrightText);
+            const linkX = margin + copyrightTextWidth;
+
+            // jsPDF doesn't have built-in rich text formatting for links, we simulate it
+            docInstance.setTextColor(Number('0x1A'), Number('0x23'), Number('0x7E')); // Primary color
+            docInstance.textWithLink(linkText, linkX, footerY, { url: linkUrl });
+            // Simulate underline if textWithLink doesn't provide it
+            docInstance.setDrawColor(Number('0x1A'), Number('0x23'), Number('0x7E')); // Underline color
+            docInstance.line(linkX, footerY + 0.5, linkX + linkTextWidth, footerY + 0.5); // Underline
+
+            // Right part: Period
+            const periodText = ".";
+            const periodX = linkX + linkTextWidth;
+            docInstance.setTextColor(150); // Reset to muted color
+            docInstance.text(periodText, periodX, footerY, { align: 'left' });
+
+            // Page number (far right)
+            const pageNumText = `Página ${i} de ${pageCount}`;
+            docInstance.text(pageNumText, pageWidth - margin, footerY, { align: 'right' });
+            }
+            docInstance.setTextColor(0); // Reset text color for main content
+        };
+
+      // --- PDF Title ---
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(Number('0x1A'), Number('0x23'), Number('0x7E'));
+      doc.text('Reporte de Desbalance de Voltaje y Reclasificación', pageWidth / 2, currentY, { align: 'center' });
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(0, 0, 0);
+      currentY += 7;
+
+      // --- Motor & Test Details Table ---
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text('Datos del Motor y Prueba', margin, currentY);
+      currentY += 4;
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      const testDate = format(new Date(), 'dd/MM/yyyy HH:mm');
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Parámetro', 'Valor']],
+        body: [
+          ['ID Motor / Serial / Aplicación:', formData.motorId],
+          ['Potencia Nominal (HP):', formData.motorHp ? formData.motorHp : 'N/D'],
+          ['Voltaje Nominal (V):', formData.nominalVoltage ? formData.nominalVoltage : 'N/D'],
+          ['Fecha de la Prueba:', testDate],
+        ],
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 1.2 },
+        headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', fontSize: 8 },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 }, 1: { cellWidth: contentWidth - 60 } },
+        margin: { left: margin, right: margin },
+        didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 6;
+
+      // --- Measured Voltages Table ---
+      if (currentY + 25 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text('Voltajes Medidos (Línea a Línea)', margin, currentY);
+      currentY += 4;
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Fase', 'Voltaje (V)']],
+        body: [
+          ['Vab', formData.vab],
+          ['Vbc', formData.vbc],
+          ['Vca', formData.vca],
+          ['Promedio', ((Number(formData.vab) + Number(formData.vbc) + Number(formData.vca)) / 3).toFixed(2)],
+        ],
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 1.2 },
+        headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', fontSize: 8 },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 }, 1: { cellWidth: contentWidth - 60, halign: 'right' } },
+        margin: { left: margin, right: margin },
+        didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 6;
+
+      // --- Calculated Results Table ---
+      if (currentY + 35 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text('Resultados Calculados', margin, currentY);
+      currentY += 4;
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      const resultsBody = [
+        ['% Desbalance de Voltaje (NEMA):', `${voltageUnbalance !== null ? voltageUnbalance.toFixed(2) : 'N/D'} %`],
+        ['Factor de Reclasificación (Fr):', deratingFactor !== null ? deratingFactor.toFixed(3) : 'N/D'],
+        ['% Desviación de Voltaje Nominal:', `${voltageDeviation !== null ? voltageDeviation.toFixed(2) : 'N/D'} %`],
+        ['Potencia Reclasificada (HP):', `${deratedPowerHp !== null ? deratedPowerHp.toFixed(2) : 'N/D'}`],
+      ];
+       // Add warnings if applicable
+       if (voltageUnbalance !== null && voltageUnbalance > 5) {
+           resultsBody.push([{ content: 'Advertencia Desbalance > 5% (No recomendable operar según NEMA MG1)', colSpan: 2, styles: { textColor: [220, 53, 69], fontStyle: 'italic', fontSize: 7 } }]);
+       }
+       if (voltageDeviation !== null && Math.abs(voltageDeviation) > 10) {
+            resultsBody.push([{ content: 'Advertencia Desviación Voltaje > +/-10% (Afecta rendimiento y vida útil)', colSpan: 2, styles: { textColor: [220, 53, 69], fontStyle: 'italic', fontSize: 7 } }]);
+       }
+       if (deratedPowerHp === null && (formData.motorHp === '' || !formData.motorHp)) {
+           resultsBody.push([{ content: 'Nota: Introducir HP nominal para calcular potencia reclasificada.', colSpan: 2, styles: { textColor: [108, 117, 125], fontStyle: 'italic', fontSize: 7 } }]);
+       }
+       if (voltageDeviation === null && (formData.nominalVoltage === '' || !formData.nominalVoltage)) {
+            resultsBody.push([{ content: 'Nota: Introducir Voltaje nominal para calcular desviación.', colSpan: 2, styles: { textColor: [108, 117, 125], fontStyle: 'italic', fontSize: 7 } }]);
+       }
+
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Índice', 'Valor']],
+        body: resultsBody,
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 1.2 },
+        headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', fontSize: 8 },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 }, 1: { cellWidth: contentWidth - 60, halign: 'right' } },
+        margin: { left: margin, right: margin },
+        didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 6;
+
+      // --- Derating Factor Chart ---
+      const chartElement = chartRef.current;
+      if (chartElement) {
+          const chartTitleY = currentY;
+          if (chartTitleY + 55 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
+          doc.setFontSize(10); doc.setFont(undefined, 'bold');
+          doc.text('Curva de Factor de Reclasificación (NEMA MG1)', margin, currentY);
+          currentY += 4;
+          doc.setFontSize(8); doc.setFont(undefined, 'normal');
+
+          try {
+             // Add a small delay to ensure chart rendering completes before canvas capture
+              await new Promise(resolve => setTimeout(resolve, 300));
+              const canvas = await html2canvas(chartElement, { scale: 1.6, backgroundColor: '#ffffff', logging: false, useCORS: true });
+              const imgData = canvas.toDataURL('image/png');
+              const imgProps = doc.getImageProperties(imgData);
+              const pdfChartWidth = contentWidth * 0.7; // Adjust chart width as needed
+              const pdfChartHeight = (imgProps.height * pdfChartWidth) / imgProps.width;
+              const chartX = (pageWidth - pdfChartWidth) / 2; // Center the chart
+
+              if (currentY + pdfChartHeight > pageHeight - margin - footerHeight) {
+                  doc.addPage();
+                  currentY = margin;
+                  doc.setFontSize(10); doc.setFont(undefined, 'bold');
+                  doc.text('Curva de Factor de Reclasificación (NEMA MG1)', margin, currentY); currentY += 4;
+                  doc.setFontSize(8); doc.setFont(undefined, 'normal');
+              }
+
+              doc.addImage(imgData, 'PNG', chartX, currentY, pdfChartWidth, pdfChartHeight);
+              currentY += pdfChartHeight + 4;
+          } catch (error) {
+              console.error("Error generando imagen del gráfico:", error);
+              if (currentY + 8 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
+              doc.setTextColor(255, 0, 0);
+              doc.setFontSize(8);
+              doc.text('Error generando imagen del gráfico.', margin, currentY);
+              currentY += 6;
+              doc.setTextColor(0, 0, 0);
+              toast({ title: "Error de Gráfico", description: "No se pudo generar la imagen del gráfico para el PDF.", variant: "destructive" });
+          }
+      }
+
+      // --- Explanatory Note ---
+      if (currentY + 25 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'italic');
+      doc.setTextColor(100, 100, 100);
+      const noteText = `Nota: El desbalance de voltaje afecta el calentamiento y la eficiencia del motor. El factor de reclasificación (Fr) se usa para determinar la potencia máxima segura (Potencia Reclasificada = Potencia Nominal * Fr) bajo desbalance. La desviación del voltaje nominal afecta el par y la corriente. Consulte NEMA MG1 y las recomendaciones del fabricante.`;
+      const splitNotes = doc.splitTextToSize(noteText, contentWidth);
+      doc.text(splitNotes, margin, currentY);
+      currentY += (splitNotes.length * 3.5) + 4; // Adjust spacing based on lines
+
+      // --- Footer ---
+      addFooter(doc);
+
+      // --- Save PDF ---
+      doc.save(`Reporte_Desbalance_Voltaje_${formData.motorId || 'Motor'}.pdf`);
+      toast({
+        title: "PDF Generado",
+        description: "El reporte se ha descargado exitosamente.",
+        variant: "default",
+      });
+
+    } catch (error) {
+      console.error("Error generando PDF:", error);
+      toast({
+        title: "Error al Generar PDF",
+        description: "Ocurrió un error inesperado. Revisa la consola.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPdf(false);
+    }
+  };
+
   return (
     <>
       <Toaster />
@@ -224,7 +480,7 @@ export function VoltageUnbalanceCalculator() {
         <CardContent className="p-6 bg-secondary/30">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Motor Details Section - Added */}
+              {/* Motor Details Section */}
                <Card className="bg-card shadow-md rounded-md">
                   <CardHeader>
                     <CardTitle className="text-lg text-primary">Datos del Motor</CardTitle>
@@ -264,6 +520,7 @@ export function VoltageUnbalanceCalculator() {
                               step="any"
                               placeholder="Ej: 100"
                               {...field}
+                              value={field.value === null ? '' : field.value} // Handle null for controlled input
                               className={cn("rounded-md", fieldState.error && "border-destructive focus-visible:ring-destructive")}
                             />
                           </FormControl>
@@ -285,6 +542,7 @@ export function VoltageUnbalanceCalculator() {
                               step="any"
                               placeholder="Ej: 480"
                               {...field}
+                               value={field.value === null ? '' : field.value} // Handle null for controlled input
                               className={cn("rounded-md", fieldState.error && "border-destructive focus-visible:ring-destructive")}
                             />
                           </FormControl>
@@ -367,12 +625,23 @@ export function VoltageUnbalanceCalculator() {
 
               <Separator className="bg-border my-4" />
 
-              <div className="flex justify-end pt-4">
-                <Button type="submit" variant="default" className="bg-accent hover:bg-accent/90 rounded-md text-accent-foreground">
-                  <Calculator className="mr-2 h-4 w-4" />
-                  Calcular Índices
-                </Button>
-              </div>
+               {/* Action Buttons */}
+               <div className="flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-4 pt-4">
+                  <Button
+                    type="button"
+                    onClick={generatePDF}
+                    disabled={!formData || isLoadingPdf} // Disable if no data OR loading
+                    variant="outline"
+                    className="rounded-md border-primary text-primary hover:bg-primary/10"
+                  >
+                    <FileDown className="mr-2 h-4 w-4" />
+                    {isLoadingPdf ? 'Generando PDF...' : 'Descargar Reporte PDF'}
+                  </Button>
+                  <Button type="submit" variant="default" className="bg-accent hover:bg-accent/90 rounded-md text-accent-foreground">
+                    <Calculator className="mr-2 h-4 w-4" />
+                    Calcular Índices
+                  </Button>
+               </div>
             </form>
           </Form>
 
@@ -430,11 +699,11 @@ export function VoltageUnbalanceCalculator() {
                              <Power className="mr-2 h-5 w-5 text-primary" />
                              <span className="font-medium text-foreground">Potencia Reclasificada (HP):</span>
                           </div>
-                          <span className={cn(
-                            "text-xl font-bold",
-                            deratedPowerHp !== null && form.getValues().motorHp && deratedPowerHp < (form.getValues().motorHp * 0.8) ? "text-destructive" : "text-primary" // Example threshold: if derated power is less than 80% of nominal
+                           <span className={cn(
+                               "text-xl font-bold",
+                               deratedPowerHp !== null && form.getValues().motorHp && deratedPowerHp < (Number(form.getValues().motorHp) * 0.8) ? "text-destructive" : "text-primary" // Example threshold: if derated power is less than 80% of nominal
                            )}>
-                             {deratedPowerHp !== null ? deratedPowerHp.toFixed(2) : 'N/D'}
+                               {deratedPowerHp !== null ? deratedPowerHp.toFixed(2) : 'N/D'}
                            </span>
                         </div>
                         {deratedPowerHp === null && (form.getValues().motorHp === '' || !form.getValues().motorHp) && ( // Check if motorHp is empty or undefined/null
@@ -476,6 +745,12 @@ export function VoltageUnbalanceCalculator() {
                         </Link>
                         {' '}y las recomendaciones del fabricante.
                       </p>
+                      {/* Hidden Chart for PDF Generation */}
+                       <div className="absolute -left-[9999px] top-0 w-[500px]" aria-hidden="true">
+                           <div ref={chartRef} className="bg-white p-4">
+                             <DeratingFactorChart />
+                           </div>
+                        </div>
                   </CardContent>
                 </Card>
               </>
