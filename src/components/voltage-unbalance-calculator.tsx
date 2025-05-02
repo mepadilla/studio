@@ -47,11 +47,11 @@ const formSchema = z.object({
     .gt(0, 'Debe ser mayor que 0'),
   motorHp: z.coerce // Added motor HP field
     .number({ invalid_type_error: 'Debe ser un número' })
-    .positive('Debe ser positivo')
+    .positive('La potencia debe ser positiva')
     .optional(), // Optional for now
   nominalVoltage: z.coerce // Added nominal voltage field
     .number({ invalid_type_error: 'Debe ser un número' })
-    .positive('Debe ser positivo')
+    .positive('El voltaje debe ser positivo')
     .optional(), // Optional for now
 });
 
@@ -119,6 +119,7 @@ export function VoltageUnbalanceCalculator() {
   const [voltageUnbalance, setVoltageUnbalance] = React.useState<number | null>(null);
   const [deratingFactor, setDeratingFactor] = React.useState<number | null>(null);
   const [voltageDeviation, setVoltageDeviation] = React.useState<number | null>(null); // State for voltage deviation
+  const [deratedPowerHp, setDeratedPowerHp] = React.useState<number | null>(null); // State for derated power
   const [showResults, setShowResults] = React.useState(false);
   const resultsRef = React.useRef<HTMLDivElement>(null);
 
@@ -137,7 +138,7 @@ export function VoltageUnbalanceCalculator() {
   });
 
   const calculateUnbalance = (data: FormData) => {
-    const { vab, vbc, vca, nominalVoltage } = data; // Include nominalVoltage
+    const { vab, vbc, vca, nominalVoltage, motorHp } = data; // Include motorHp
     const voltages = [vab, vbc, vca];
 
     // Calculate average voltage
@@ -151,7 +152,8 @@ export function VoltageUnbalanceCalculator() {
          const maxDeviationUnbalance = Math.max(...deviationsUnbalance);
          unbalancePercent = (maxDeviationUnbalance / averageVoltage) * 100;
     }
-    setVoltageUnbalance(parseFloat(unbalancePercent.toFixed(2)));
+    const finalUnbalancePercent = parseFloat(unbalancePercent.toFixed(2));
+    setVoltageUnbalance(finalUnbalancePercent);
 
 
     // Calculate voltage deviation from nominal
@@ -164,14 +166,23 @@ export function VoltageUnbalanceCalculator() {
     }
 
     // Calculate derating factor based on unbalance
-    const factor = calculateDeratingFactor(unbalancePercent);
+    const factor = calculateDeratingFactor(finalUnbalancePercent);
     setDeratingFactor(factor);
+
+    // Calculate derated power
+    if (motorHp && motorHp > 0 && factor !== null) {
+        const calculatedDeratedPower = motorHp * factor;
+        setDeratedPowerHp(parseFloat(calculatedDeratedPower.toFixed(2)));
+    } else {
+        setDeratedPowerHp(null); // Reset if motorHp or factor is invalid
+    }
+
 
     setShowResults(true);
 
     toast({
       title: "Cálculo Exitoso",
-      description: "El desbalance y la desviación de voltaje se han calculado.", // Updated message
+      description: "Los índices de desbalance, desviación y potencia reclasificada se han calculado.", // Updated message
       variant: "default",
     });
 
@@ -205,7 +216,7 @@ export function VoltageUnbalanceCalculator() {
             Calculadora de Desbalance y Desviación de Voltaje (NEMA)
           </CardTitle>
           <CardDescription className="text-primary-foreground/80">
-            Introduce los datos del motor y los voltajes de línea para calcular el % de desbalance, el factor de reclasificación y la desviación del voltaje nominal.
+            Introduce los datos del motor y los voltajes de línea para calcular el % de desbalance, el factor de reclasificación, la desviación del voltaje nominal y la potencia reclasificada.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6 bg-secondary/30">
@@ -223,7 +234,7 @@ export function VoltageUnbalanceCalculator() {
                       render={({ field, fieldState }) => (
                         <FormItem>
                            <FormLabel className="text-foreground/80 flex items-center">
-                             <Power className="mr-1 h-4 w-4"/> Potencia (HP)
+                             <Power className="mr-1 h-4 w-4"/> Potencia Nominal (HP) <span className="text-muted-foreground/80 ml-1">(Requerido para cálculo de potencia reclasificada)</span>
                           </FormLabel>
                           <FormControl>
                             <Input
@@ -234,7 +245,7 @@ export function VoltageUnbalanceCalculator() {
                               className={cn("rounded-md", fieldState.error && "border-destructive focus-visible:ring-destructive")}
                             />
                           </FormControl>
-                           {/* No FormMessage here as it's optional */}
+                           <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -255,7 +266,7 @@ export function VoltageUnbalanceCalculator() {
                               className={cn("rounded-md", fieldState.error && "border-destructive focus-visible:ring-destructive")}
                             />
                           </FormControl>
-                           <FormMessage /> {/* Show message if required */}
+                           <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -345,7 +356,7 @@ export function VoltageUnbalanceCalculator() {
 
           {/* Results Section - Conditionally Rendered */}
           <div ref={resultsRef}>
-            {showResults && (voltageUnbalance !== null || deratingFactor !== null || voltageDeviation !== null) && (
+            {showResults && (voltageUnbalance !== null || deratingFactor !== null || voltageDeviation !== null || deratedPowerHp !== null) && (
               <>
                 <Separator className="my-6 bg-border" />
                 <Card className="bg-card shadow-md rounded-md">
@@ -390,6 +401,25 @@ export function VoltageUnbalanceCalculator() {
                           </span>
                         </div>
                     )}
+
+                     {/* Derated Power */}
+                      <div className="flex justify-between items-center p-3 bg-background rounded-md border">
+                          <div className="flex items-center">
+                             <Power className="mr-2 h-5 w-5 text-primary" />
+                             <span className="font-medium text-foreground">Potencia Reclasificada (HP):</span>
+                          </div>
+                          <span className={cn(
+                            "text-xl font-bold",
+                            deratedPowerHp !== null && form.getValues().motorHp && deratedPowerHp < (form.getValues().motorHp * 0.8) ? "text-destructive" : "text-primary" // Example threshold: if derated power is less than 80% of nominal
+                           )}>
+                             {deratedPowerHp !== null ? deratedPowerHp.toFixed(2) : 'N/D'}
+                           </span>
+                        </div>
+                        {deratedPowerHp === null && form.getValues().motorHp === '' && (
+                             <p className="text-xs text-muted-foreground mt-1">
+                                Introduce la potencia nominal (HP) del motor para calcular la potencia reclasificada.
+                             </p>
+                        )}
 
                      {/* Voltage Deviation */}
                      <div className="flex justify-between items-center p-3 bg-background rounded-md border">
@@ -448,4 +478,3 @@ export function VoltageUnbalanceCalculator() {
     </>
   );
 }
-
