@@ -5,7 +5,7 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
-import { Calculator, AlertTriangle, Percent, TrendingDown, Power, Bolt } from 'lucide-react'; // Import icons including Power and Bolt
+import { Calculator, AlertTriangle, Percent, TrendingDown, Power, Bolt, Gauge } from 'lucide-react'; // Import icons including Power, Bolt, and Gauge
 
 import { Button } from '@/components/ui/button';
 import {
@@ -118,6 +118,7 @@ function calculateDeratingFactor(unbalancePercent: number): number {
 export function VoltageUnbalanceCalculator() {
   const [voltageUnbalance, setVoltageUnbalance] = React.useState<number | null>(null);
   const [deratingFactor, setDeratingFactor] = React.useState<number | null>(null);
+  const [voltageDeviation, setVoltageDeviation] = React.useState<number | null>(null); // State for voltage deviation
   const [showResults, setShowResults] = React.useState(false);
   const resultsRef = React.useRef<HTMLDivElement>(null);
 
@@ -136,25 +137,33 @@ export function VoltageUnbalanceCalculator() {
   });
 
   const calculateUnbalance = (data: FormData) => {
-    const { vab, vbc, vca } = data;
+    const { vab, vbc, vca, nominalVoltage } = data; // Include nominalVoltage
     const voltages = [vab, vbc, vca];
 
     // Calculate average voltage
     const averageVoltage = (vab + vbc + vca) / 3;
 
-    // Calculate maximum deviation from average
-    const deviations = voltages.map(v => Math.abs(v - averageVoltage));
-    const maxDeviation = Math.max(...deviations);
-
     // Calculate percentage unbalance (NEMA definition)
     let unbalancePercent = 0;
     if (averageVoltage > 0) {
-         unbalancePercent = (maxDeviation / averageVoltage) * 100;
+         // Calculate maximum deviation from average for unbalance
+         const deviationsUnbalance = voltages.map(v => Math.abs(v - averageVoltage));
+         const maxDeviationUnbalance = Math.max(...deviationsUnbalance);
+         unbalancePercent = (maxDeviationUnbalance / averageVoltage) * 100;
     }
-
     setVoltageUnbalance(parseFloat(unbalancePercent.toFixed(2)));
 
-    // Calculate derating factor
+
+    // Calculate voltage deviation from nominal
+    let deviationPercent: number | null = null;
+    if (nominalVoltage && nominalVoltage > 0 && averageVoltage > 0) {
+        deviationPercent = ((averageVoltage - nominalVoltage) / nominalVoltage) * 100;
+        setVoltageDeviation(parseFloat(deviationPercent.toFixed(2)));
+    } else {
+        setVoltageDeviation(null); // Reset if nominal voltage is not valid
+    }
+
+    // Calculate derating factor based on unbalance
     const factor = calculateDeratingFactor(unbalancePercent);
     setDeratingFactor(factor);
 
@@ -162,7 +171,7 @@ export function VoltageUnbalanceCalculator() {
 
     toast({
       title: "Cálculo Exitoso",
-      description: "El desbalance de voltaje y el factor de reclasificación se han calculado.",
+      description: "El desbalance y la desviación de voltaje se han calculado.", // Updated message
       variant: "default",
     });
 
@@ -177,6 +186,15 @@ export function VoltageUnbalanceCalculator() {
     calculateUnbalance(data);
   };
 
+  // Function to get color based on deviation percentage
+  const getDeviationColor = (deviation: number | null): string => {
+      if (deviation === null) return "text-muted-foreground"; // Default color if no calculation
+      const absDeviation = Math.abs(deviation);
+      if (absDeviation <= 5) return "text-green-600"; // Green for +/- 5%
+      if (absDeviation <= 10) return "text-yellow-600"; // Yellow for +/- 5% to +/- 10%
+      return "text-destructive"; // Red for > +/- 10%
+  }
+
   return (
     <>
       <Toaster />
@@ -184,10 +202,10 @@ export function VoltageUnbalanceCalculator() {
         <CardHeader className="bg-primary text-primary-foreground">
           <CardTitle className="text-2xl font-bold flex items-center">
             <AlertTriangle className="mr-2 h-6 w-6" />
-            Calculadora de Desbalance de Voltaje (NEMA)
+            Calculadora de Desbalance y Desviación de Voltaje (NEMA)
           </CardTitle>
           <CardDescription className="text-primary-foreground/80">
-            Introduce los datos del motor y los voltajes de línea para calcular el % de desbalance y el factor de reclasificación.
+            Introduce los datos del motor y los voltajes de línea para calcular el % de desbalance, el factor de reclasificación y la desviación del voltaje nominal.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6 bg-secondary/30">
@@ -216,7 +234,7 @@ export function VoltageUnbalanceCalculator() {
                               className={cn("rounded-md", fieldState.error && "border-destructive focus-visible:ring-destructive")}
                             />
                           </FormControl>
-                          <FormMessage />
+                           {/* No FormMessage here as it's optional */}
                         </FormItem>
                       )}
                     />
@@ -226,7 +244,7 @@ export function VoltageUnbalanceCalculator() {
                       render={({ field, fieldState }) => (
                         <FormItem>
                           <FormLabel className="text-foreground/80 flex items-center">
-                             <Bolt className="mr-1 h-4 w-4"/> Voltaje Nominal (V)
+                             <Bolt className="mr-1 h-4 w-4"/> Voltaje Nominal (V) <span className="text-muted-foreground/80 ml-1">(Requerido para cálculo de desviación)</span>
                            </FormLabel>
                           <FormControl>
                             <Input
@@ -237,7 +255,7 @@ export function VoltageUnbalanceCalculator() {
                               className={cn("rounded-md", fieldState.error && "border-destructive focus-visible:ring-destructive")}
                             />
                           </FormControl>
-                          <FormMessage />
+                           <FormMessage /> {/* Show message if required */}
                         </FormItem>
                       )}
                     />
@@ -319,7 +337,7 @@ export function VoltageUnbalanceCalculator() {
               <div className="flex justify-end pt-4">
                 <Button type="submit" variant="default" className="bg-accent hover:bg-accent/90 rounded-md text-accent-foreground">
                   <Calculator className="mr-2 h-4 w-4" />
-                  Calcular Desbalance
+                  Calcular Índices
                 </Button>
               </div>
             </form>
@@ -327,7 +345,7 @@ export function VoltageUnbalanceCalculator() {
 
           {/* Results Section - Conditionally Rendered */}
           <div ref={resultsRef}>
-            {showResults && voltageUnbalance !== null && deratingFactor !== null && (
+            {showResults && (voltageUnbalance !== null || deratingFactor !== null || voltageDeviation !== null) && (
               <>
                 <Separator className="my-6 bg-border" />
                 <Card className="bg-card shadow-md rounded-md">
@@ -335,43 +353,76 @@ export function VoltageUnbalanceCalculator() {
                       <CardTitle className="text-lg text-primary">Resultados Calculados</CardTitle>
                    </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center p-3 bg-background rounded-md border">
-                      <div className="flex items-center">
-                          <Percent className="mr-2 h-5 w-5 text-primary" />
-                          <span className="font-medium text-foreground">Porcentaje de Desbalance:</span>
-                      </div>
-                      <span className={cn(
-                         "text-xl font-bold",
-                         voltageUnbalance > 5 ? "text-destructive" : "text-primary"
-                      )}>
-                         {voltageUnbalance.toFixed(2)} %
-                       </span>
-                    </div>
-                     {voltageUnbalance > 5 && (
-                        <p className="text-sm text-destructive flex items-center">
+                    {/* Voltage Unbalance */}
+                    {voltageUnbalance !== null && (
+                        <div className="flex justify-between items-center p-3 bg-background rounded-md border">
+                          <div className="flex items-center">
+                              <Percent className="mr-2 h-5 w-5 text-primary" />
+                              <span className="font-medium text-foreground">Porcentaje de Desbalance:</span>
+                          </div>
+                          <span className={cn(
+                             "text-xl font-bold",
+                             voltageUnbalance > 5 ? "text-destructive" : "text-primary"
+                          )}>
+                             {voltageUnbalance.toFixed(2)} %
+                           </span>
+                        </div>
+                    )}
+                     {voltageUnbalance !== null && voltageUnbalance > 5 && (
+                        <p className="text-sm text-destructive flex items-center mt-1">
                           <AlertTriangle className="mr-1 h-4 w-4"/>
                            ¡Advertencia! El desbalance supera el 5%. No se recomienda operar el motor en estas condiciones según NEMA MG1.
                         </p>
                       )}
-                    <div className="flex justify-between items-center p-3 bg-background rounded-md border">
-                       <div className="flex items-center">
-                          <TrendingDown className="mr-2 h-5 w-5 text-primary" />
-                          <span className="font-medium text-foreground">Factor de Reclasificación (Fr):</span>
-                       </div>
-                      <span className={cn(
-                        "text-xl font-bold",
-                        deratingFactor < 0.8 ? "text-destructive" : "text-primary" // Example threshold
-                      )}>
-                        {deratingFactor.toFixed(3)}
-                      </span>
-                    </div>
+
+                    {/* Derating Factor */}
+                    {deratingFactor !== null && (
+                        <div className="flex justify-between items-center p-3 bg-background rounded-md border">
+                           <div className="flex items-center">
+                              <TrendingDown className="mr-2 h-5 w-5 text-primary" />
+                              <span className="font-medium text-foreground">Factor de Reclasificación (Fr):</span>
+                           </div>
+                          <span className={cn(
+                            "text-xl font-bold",
+                            deratingFactor < 0.8 ? "text-destructive" : "text-primary" // Example threshold
+                          )}>
+                            {deratingFactor.toFixed(3)}
+                          </span>
+                        </div>
+                    )}
+
+                     {/* Voltage Deviation */}
+                     <div className="flex justify-between items-center p-3 bg-background rounded-md border">
+                        <div className="flex items-center">
+                            <Gauge className="mr-2 h-5 w-5 text-primary" />
+                            <span className="font-medium text-foreground">Desviación de Voltaje Nominal:</span>
+                        </div>
+                        <span className={cn(
+                             "text-xl font-bold",
+                             getDeviationColor(voltageDeviation) // Use helper for color
+                         )}>
+                             {voltageDeviation !== null ? `${voltageDeviation.toFixed(2)} %` : 'N/D'}
+                         </span>
+                      </div>
+                      {voltageDeviation === null && form.getValues().nominalVoltage === '' && (
+                           <p className="text-xs text-muted-foreground mt-1">
+                              Introduce el voltaje nominal del motor para calcular la desviación.
+                           </p>
+                      )}
+                       {voltageDeviation !== null && Math.abs(voltageDeviation) > 10 && (
+                          <p className="text-sm text-destructive flex items-center mt-1">
+                            <AlertTriangle className="mr-1 h-4 w-4"/>
+                             ¡Advertencia! La desviación del voltaje nominal supera el +/-10%. Esto puede afectar el rendimiento y la vida útil del motor.
+                          </p>
+                       )}
+
 
                      <p className="text-xs text-muted-foreground pt-2">
-                        El factor de reclasificación indica cuánto debe reducirse la potencia nominal del motor para operar de forma segura con el desbalance calculado. Consulta la{' '}
+                        El desbalance afecta el calentamiento y la eficiencia. La desviación del voltaje nominal afecta el par y la corriente. Consulta la{' '}
                         <Link href="/documentation/technical-standards/voltage-derating-nema-mg1" className="text-primary underline hover:text-primary/80">
                           documentación de NEMA MG1
                         </Link>
-                        {' '}para más detalles.
+                        {' '}y las recomendaciones del fabricante.
                       </p>
                   </CardContent>
                 </Card>
@@ -397,3 +448,4 @@ export function VoltageUnbalanceCalculator() {
     </>
   );
 }
+
