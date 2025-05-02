@@ -71,7 +71,7 @@ export default function RootLayout({
                                  {/* Link to the new Voltage Derating NEMA MG1 page */}
                                 <MenubarItem asChild>
                                   <Link href="/documentation/technical-standards/voltage-derating-nema-mg1" className="w-full">
-                                      Derrateo de Voltaje - NEMA MG1
+                                      Desbalance de Voltaje - NEMA MG1 {/* Updated Text */}
                                   </Link>
                                 </MenubarItem>
                                 {/* Add more technical standard links here */}
