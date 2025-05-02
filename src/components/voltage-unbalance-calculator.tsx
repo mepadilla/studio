@@ -236,7 +236,7 @@ export function VoltageUnbalanceCalculator() {
                       render={({ field, fieldState }) => (
                         <FormItem>
                           <FormLabel className="text-foreground/80 flex items-center">
-                            <ScanLine className="mr-1 h-4 w-4"/> ID del Motor
+                            <ScanLine className="mr-1 h-4 w-4"/> ID del Motor / Serial
                           </FormLabel>
                           <FormControl>
                             <Input
