@@ -320,7 +320,7 @@ export function InsulationResistanceAnalyzer() {
          doc.setFont(undefined, 'bold');
          doc.text('Lecturas de Resistencia de Aislamiento', margin, currentY); 
          currentY += 5; // Reduced space
-         doc.setFontSize(8); // Readings Font
+         doc.setFontSize(7); // Readings Font
          doc.setFont(undefined, 'normal'); 
 
          // Prepare body data for the 4-column layout
@@ -364,8 +364,8 @@ export function InsulationResistanceAnalyzer() {
            head: [['Tiempo', 'Resistencia (G-OHM)', 'Tiempo', 'Resistencia (G-OHM)']], 
            body: readingsBody4Col,
            theme: 'grid',
-           styles: { fontSize: 7.5, cellPadding: 1, halign: 'center' }, 
-           headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 8 }, 
+           styles: { fontSize: 7, cellPadding: 1, halign: 'center' }, 
+           headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 7.5 }, 
            columnStyles: {
              0: { cellWidth: 'auto', halign: 'left' },
              1: { cellWidth: 'auto', halign: 'center' }, 
@@ -592,13 +592,13 @@ export function InsulationResistanceAnalyzer() {
         currentY += 1; 
         doc.setFontSize(9); doc.setFont(undefined, 'bold'); 
         doc.text('Valores de Referencia (IEEE Std 43-2013)', rightColX + 2, currentY + 2.5); currentY += 6; 
-        doc.setFontSize(8); doc.setFont(undefined, 'normal'); 
+        doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
 
         // Common config for reference tables
         const tableConfig = {
           theme: 'grid' as const,
-          styles: { fontSize: 7.5, cellPadding: 0.8, halign: 'left' }, 
-          headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 8 }, 
+          styles: { fontSize: 7, cellPadding: 0.8, halign: 'left' }, 
+          headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 7.5 }, 
           tableWidth: colWidth,
           margin: { left: rightColX },
           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; } 
@@ -655,7 +655,7 @@ export function InsulationResistanceAnalyzer() {
          doc.text(formulaTitle, rightColX + formulaBoxPadding, formulaTextY); 
          formulaTextY += 4; 
 
-         doc.setFontSize(7.5); doc.setFont(undefined, 'normal'); 
+         doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
          doc.text(piFormulaText, rightColX + formulaBoxPadding, formulaTextY); 
          formulaTextY += 4; 
          doc.text(darFormulaText, rightColX + formulaBoxPadding, formulaTextY); 
@@ -758,8 +758,8 @@ export function InsulationResistanceAnalyzer() {
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-lg text-primary">Detalles de la Prueba</CardTitle>
                   {currentTime && (
-                    <div className="text-sm text-muted-foreground flex items-center">
-                      <CalendarClock className="mr-1 h-4 w-4" />
+                    <div className="text-2xl text-muted-foreground flex items-center">
+                      <CalendarClock className="mr-2 h-6 w-6" />
                       <span>{currentTime}</span>
                     </div>
                   )}
