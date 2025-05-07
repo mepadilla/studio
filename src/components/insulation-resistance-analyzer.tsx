@@ -338,7 +338,7 @@ export function InsulationResistanceAnalyzer() {
          for (let i = 0; i < numRows; i++) {
            const row: (string | number)[] = [];
            const point1Index = i;
-            if (point1Index < 7) { // Show up to 6 items in the first two columns (0s to 3min)
+            if (point1Index < 7) { // Show up to 7 items in the first two columns (0s to 3min, inclusive of 3min which is index 6)
                const point1 = timePoints[point1Index];
                if (point1) {
                  row.push(point1.label);
@@ -353,7 +353,7 @@ export function InsulationResistanceAnalyzer() {
            }
 
 
-           const point2Index = i + 7; // Start 3rd column with 4min
+           const point2Index = i + 7; // Start 3rd column with 4min (index 7)
            const point2 = timePoints[point2Index];
            if (point2) {
               row.push(point2.label);
@@ -364,11 +364,6 @@ export function InsulationResistanceAnalyzer() {
            }
            readingsBody4Col.push(row);
          }
-          // Ensure the table doesn't exceed 7 rows, if point1Index went up to 6 (0 to 6 = 7 items)
-          // The loop for `i` goes from 0 to `numRows - 1`. `numRows` is `Math.ceil(13/2) = 7`. So `i` goes 0 to 6.
-          // This means `readingsBody4Col` will have 7 rows.
-          // If `timePoints.length` was even, `numRows` would be `timePoints.length / 2`.
-          // The logic for `point1Index < 7` and `i + 7` for `point2Index` creates the desired 7+6 distribution.
 
          autoTable(doc, {
            startY: currentY,
@@ -569,9 +564,9 @@ export function InsulationResistanceAnalyzer() {
              const indicesCardEndY = currentY + 0.1; // Reduced space
 
              doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); 
-             doc.roundedRect(rightColX - 1, indicesCardStartY - 1, colWidth + 2, indicesCardEndY - indicesCardStartY + 1, 1.5, 1.5, 'S'); 
+             doc.roundedRect(rightColX - 1, indicesCardStartY - 1, colWidth + 2, indicesCardEndY - indicesCardStartY + 0.5, 1.5, 1.5, 'S'); 
 
-             currentY = indicesCardEndY + 2; // Reduced space
+             currentY = indicesCardEndY + 1.5; // Reduced space
         }
       
 
@@ -604,7 +599,7 @@ export function InsulationResistanceAnalyzer() {
           },
         });
 
-        currentY += 2; // Reduced space
+        currentY += 1.5; // Reduced space
 
         if (currentY + 22 > pageHeight - margin - footerHeight) { // Adjusted height check
              doc.addPage(); currentY = margin;
@@ -621,7 +616,7 @@ export function InsulationResistanceAnalyzer() {
         const refCardEndY = currentY; 
         doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); 
         doc.roundedRect(rightColX - 1, refBorderStartY - 1, colWidth + 2, refCardEndY - refBorderStartY + 1, 1.5, 1.5, 'S'); 
-        currentY = refCardEndY + 2; // Reduced space
+        currentY = refCardEndY + 1.5; // Reduced space
 
 
          const formulaNotesStartY = currentY;
@@ -823,7 +818,7 @@ export function InsulationResistanceAnalyzer() {
                           ) : (
                             <Play className="mr-2 h-6 w-6" />
                           )}
-                          <span>{formatStopwatchTime(stopwatchTime)}</span>
+                          <span className="text-destructive">{formatStopwatchTime(stopwatchTime)}</span>
                         </Button>
                       </div>
                     )}
