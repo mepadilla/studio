@@ -814,11 +814,11 @@ export function InsulationResistanceAnalyzer() {
                           aria-label={isStopwatchRunning ? "Reiniciar cronómetro" : "Iniciar cronómetro"}
                         >
                           {isStopwatchRunning ? (
-                            <RefreshCcw className="mr-2 h-6 w-6" />
+                            <RefreshCcw className="mr-2 h-6 w-6 text-destructive" />
                           ) : (
-                            <Play className="mr-2 h-6 w-6" />
+                            <Play className="mr-2 h-6 w-6 text-destructive" />
                           )}
-                          <span className="text-destructive">{formatStopwatchTime(stopwatchTime)}</span>
+                          <span className="font-mono text-destructive font-bold">{formatStopwatchTime(stopwatchTime)}</span>
                         </Button>
                       </div>
                     )}
