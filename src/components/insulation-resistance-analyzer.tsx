@@ -296,11 +296,11 @@ export function InsulationResistanceAnalyzer() {
          doc.setTextColor(0, 0, 0); 
          currentY += 7; 
 
-         doc.setFontSize(9); 
+         doc.setFontSize(8); 
          doc.setFont(undefined, 'bold');
          doc.text('Detalles de la Prueba', margin, currentY);
          currentY += 4; 
-         doc.setFontSize(8);  // Table Font
+         doc.setFontSize(7);  // Table Font
          doc.setFont(undefined, 'normal'); 
 
          const testDate = format(new Date(), 'dd/MM/yyyy HH:mm');
@@ -325,7 +325,7 @@ export function InsulationResistanceAnalyzer() {
 
 
          if (currentY + 45 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } 
-         doc.setFontSize(9); 
+         doc.setFontSize(8); 
          doc.setFont(undefined, 'bold');
          doc.text('Lecturas de Resistencia de Aislamiento (G-OHM)', margin, currentY); 
          currentY += 4; 
@@ -400,7 +400,7 @@ export function InsulationResistanceAnalyzer() {
         if (chartElement && chartData.length > 0) {
             const chartTitleY = currentY;
             if (chartTitleY + 55 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } 
-            doc.setFontSize(9); doc.setFont(undefined, 'bold'); 
+            doc.setFontSize(8); doc.setFont(undefined, 'bold'); 
             doc.text('Gráfico Resistencia vs. Tiempo', leftColX, currentY);
             currentY += 3; // Reduced space
             doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
@@ -416,7 +416,7 @@ export function InsulationResistanceAnalyzer() {
                 if (currentY + pdfChartHeight > pageHeight - margin - footerHeight) {
                   doc.addPage(); 
                   currentY = margin; 
-                  doc.setFontSize(9); doc.setFont(undefined, 'bold'); 
+                  doc.setFontSize(8); doc.setFont(undefined, 'bold'); 
                   doc.text('Gráfico Resistencia vs. Tiempo', leftColX, currentY); currentY += 3; // Reduced space
                   doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
                 }
@@ -528,7 +528,7 @@ export function InsulationResistanceAnalyzer() {
              }
 
              currentY += 1; // Reduced space
-             doc.setFontSize(9); doc.setFont(undefined, 'bold'); 
+             doc.setFontSize(8); doc.setFont(undefined, 'bold'); 
              doc.text('Índices Calculados', rightColX + 2, currentY + 2.5); currentY += 4; // Reduced space
              doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
 
@@ -582,7 +582,7 @@ export function InsulationResistanceAnalyzer() {
 
         const refBorderStartY = currentY; 
         currentY += 0.8; // Reduced space
-        doc.setFontSize(9); doc.setFont(undefined, 'bold'); 
+        doc.setFontSize(8); doc.setFont(undefined, 'bold'); 
         doc.text('Valores de Referencia (IEEE Std 43-2013)', rightColX + 2, currentY + 2.5); currentY += 5; // Reduced space
         doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
 
@@ -837,7 +837,7 @@ export function InsulationResistanceAnalyzer() {
               </CardContent>
                  <CardFooter className="text-xs text-muted-foreground pt-4 flex items-center justify-start"> 
                      <div className="flex items-center"> 
-                       <AlertCircle className="mr-1 h-3 w-3 text-muted-foreground/70" /> Introduce las lecturas en Gigaohmios (G-OHM). Introduce 0 si la lectura es 0. 
+                       <AlertCircle className="mr-1 h-3 w-3 text-muted-foreground/70" /> Introduce las lecturas en Gigaohmios (G-OHM). Introduce 0,1 si la lectura es 0.
                      </div>
                  </CardFooter>
             </Card>
