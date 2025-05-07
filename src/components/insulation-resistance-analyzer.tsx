@@ -106,7 +106,7 @@ export function InsulationResistanceAnalyzer() {
   const [dielectricAbsorptionRatio, setDielectricAbsorptionRatio] =
     React.useState<number | null | typeof Infinity>(null); // Allow Infinity
   const [chartData, setChartData] = React.useState<ResistanceDataPoint[]>([]);
-  const [formData, setFormData] = React.useState<FormData | null>(null);
+  const [formDataForPdf, setFormDataForPdf] = React.useState<FormData | null>(null); // Renamed to avoid conflict with RHF's formData
   const [isLoadingPdf, setIsLoadingPdf] = React.useState(false);
   const [showResults, setShowResults] = React.useState(false); // State to control results visibility
   const [currentTime, setCurrentTime] = React.useState<string>(''); // State for real-time clock
@@ -205,13 +205,13 @@ export function InsulationResistanceAnalyzer() {
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
     console.log('Formulario Enviado:', data);
-    setFormData(data); // Store form data for PDF generation
+    setFormDataForPdf(data); // Store form data for PDF generation
     calculateIndices(data.readings);
   };
 
 
    const generatePDF = async () => {
-     if (!formData) {
+     if (!formDataForPdf) {
         toast({
             title: "Error",
             description: "No hay datos para generar el PDF. Por favor, calcula los índices primero.",
@@ -299,9 +299,9 @@ export function InsulationResistanceAnalyzer() {
            startY: currentY,
            head: [['Parámetro', 'Valor']],
            body: [
-             ['Nombre del Técnico:', formData.testerName],
-             ['ID del Motor:', formData.motorId],
-             ['Nro. de Serie del Motor:', formData.motorSerial],
+             ['Nombre del Técnico:', formDataForPdf.testerName],
+             ['ID del Motor:', formDataForPdf.motorId],
+             ['Nro. de Serie del Motor:', formDataForPdf.motorSerial],
              ['Fecha de la Prueba:', testDate], // Changed label here
            ],
            theme: 'grid',
@@ -318,7 +318,7 @@ export function InsulationResistanceAnalyzer() {
          if (currentY + 45 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } 
          doc.setFontSize(9); // Section title font
          doc.setFont(undefined, 'bold');
-         doc.text('Lecturas de Resistencia de Aislamiento', margin, currentY); 
+         doc.text('Lecturas de Resistencia de Aislamiento (G-OHM)', margin, currentY); 
          currentY += 5; // Reduced space
          doc.setFontSize(7); // Readings Font
          doc.setFont(undefined, 'normal'); 
@@ -335,7 +335,7 @@ export function InsulationResistanceAnalyzer() {
                const point1 = timePoints[point1Index];
                if (point1) {
                  row.push(point1.label);
-                 row.push(formData.readings[`t${point1.value}`] ?? 'N/D');
+                 row.push(formDataForPdf.readings[`t${point1.value}`] ?? 'N/D');
                } else {
                  row.push(''); 
                  row.push('');
@@ -351,7 +351,7 @@ export function InsulationResistanceAnalyzer() {
            const point2 = timePoints[point2Index];
            if (point2) {
               row.push(point2.label);
-              row.push(formData.readings[`t${point2.value}`] ?? 'N/D');
+              row.push(formDataForPdf.readings[`t${point2.value}`] ?? 'N/D');
            } else {
               row.push(''); 
               row.push('');
@@ -716,7 +716,7 @@ export function InsulationResistanceAnalyzer() {
          addFooter(doc);
 
          // Save the PDF
-         doc.save(`Reporte_Resistencia_Aislamiento_${formData.motorId || 'Motor'}.pdf`);
+         doc.save(`Reporte_Resistencia_Aislamiento_${formDataForPdf.motorId || 'Motor'}.pdf`);
          toast({
              title: "PDF Generado",
              description: "El reporte se ha descargado exitosamente.",
@@ -757,12 +757,7 @@ export function InsulationResistanceAnalyzer() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-lg text-primary">Detalles de la Prueba</CardTitle>
-                  {currentTime && (
-                    <div className="text-2xl text-muted-foreground flex items-center">
-                      <CalendarClock className="mr-2 h-6 w-6" />
-                      <span>{currentTime}</span>
-                    </div>
-                  )}
+                  {/* Clock removed from here */}
                 </div>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -841,8 +836,16 @@ export function InsulationResistanceAnalyzer() {
                   />
                 ))}
               </CardContent>
-                 <CardFooter className="text-xs text-muted-foreground pt-4 flex items-center">
-                     <AlertCircle className="mr-1 h-3 w-3 text-muted-foreground/70" /> Introduce las lecturas en Gigaohmios (G-OHM). Introduce 0 si la lectura es 0. {/* Changed unit here */}
+                 <CardFooter className="text-xs text-muted-foreground pt-4 flex items-center justify-between"> {/* Added justify-between */}
+                     <div className="flex items-center"> {/* Wrapper for note */}
+                       <AlertCircle className="mr-1 h-3 w-3 text-muted-foreground/70" /> Introduce las lecturas en Gigaohmios (G-OHM). Introduce 0 si la lectura es 0. {/* Changed unit here */}
+                     </div>
+                    {currentTime && ( // Clock moved here
+                        <div className="text-2xl text-muted-foreground flex items-center">
+                          <CalendarClock className="mr-2 h-6 w-6" />
+                          <span>{currentTime}</span>
+                        </div>
+                    )}
                  </CardFooter>
             </Card>
 
@@ -853,7 +856,7 @@ export function InsulationResistanceAnalyzer() {
                <Button
                 type="button"
                 onClick={generatePDF}
-                disabled={!formData || isLoadingPdf} // Disable if no data OR loading
+                disabled={!formDataForPdf || isLoadingPdf} // Disable if no data OR loading
                 variant="outline"
                 className="rounded-md border-primary text-primary hover:bg-primary/10"
                >
@@ -949,4 +952,3 @@ export function InsulationResistanceAnalyzer() {
    </>
   );
 }
-
