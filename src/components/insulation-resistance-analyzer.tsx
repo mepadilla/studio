@@ -299,8 +299,8 @@ export function InsulationResistanceAnalyzer() {
          doc.setFontSize(9); 
          doc.setFont(undefined, 'bold');
          doc.text('Detalles de la Prueba', margin, currentY);
-         currentY += 5; 
-         doc.setFontSize(8); 
+         currentY += 4; 
+         doc.setFontSize(8);  // Table Font
          doc.setFont(undefined, 'normal'); 
 
          const testDate = format(new Date(), 'dd/MM/yyyy HH:mm');
@@ -328,8 +328,8 @@ export function InsulationResistanceAnalyzer() {
          doc.setFontSize(9); 
          doc.setFont(undefined, 'bold');
          doc.text('Lecturas de Resistencia de Aislamiento (G-OHM)', margin, currentY); 
-         currentY += 5; 
-         doc.setFontSize(7); 
+         currentY += 4; 
+         doc.setFontSize(7);  // Readings Font
          doc.setFont(undefined, 'normal'); 
 
          const readingsBody4Col: (string | number)[][] = [];
@@ -338,7 +338,7 @@ export function InsulationResistanceAnalyzer() {
          for (let i = 0; i < numRows; i++) {
            const row: (string | number)[] = [];
            const point1Index = i;
-            if (point1Index < 6) { 
+            if (point1Index < 7) { // Show up to 6 items in the first two columns (0s to 3min)
                const point1 = timePoints[point1Index];
                if (point1) {
                  row.push(point1.label);
@@ -353,7 +353,7 @@ export function InsulationResistanceAnalyzer() {
            }
 
 
-           const point2Index = i + 6; 
+           const point2Index = i + 7; // Start 3rd column with 4min
            const point2 = timePoints[point2Index];
            if (point2) {
               row.push(point2.label);
@@ -364,6 +364,11 @@ export function InsulationResistanceAnalyzer() {
            }
            readingsBody4Col.push(row);
          }
+          // Ensure the table doesn't exceed 7 rows, if point1Index went up to 6 (0 to 6 = 7 items)
+          // The loop for `i` goes from 0 to `numRows - 1`. `numRows` is `Math.ceil(13/2) = 7`. So `i` goes 0 to 6.
+          // This means `readingsBody4Col` will have 7 rows.
+          // If `timePoints.length` was even, `numRows` would be `timePoints.length / 2`.
+          // The logic for `point1Index < 7` and `i + 7` for `point2Index` creates the desired 7+6 distribution.
 
          autoTable(doc, {
            startY: currentY,
@@ -397,7 +402,7 @@ export function InsulationResistanceAnalyzer() {
             if (chartTitleY + 55 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } 
             doc.setFontSize(9); doc.setFont(undefined, 'bold'); 
             doc.text('Gráfico Resistencia vs. Tiempo', leftColX, currentY);
-            currentY += 4; 
+            currentY += 3; // Reduced space
             doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
 
             try {
@@ -412,25 +417,25 @@ export function InsulationResistanceAnalyzer() {
                   doc.addPage(); 
                   currentY = margin; 
                   doc.setFontSize(9); doc.setFont(undefined, 'bold'); 
-                  doc.text('Gráfico Resistencia vs. Tiempo', leftColX, currentY); currentY += 4; 
+                  doc.text('Gráfico Resistencia vs. Tiempo', leftColX, currentY); currentY += 3; // Reduced space
                   doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
                 }
 
                 doc.addImage(imgData, 'PNG', leftColX, currentY, pdfChartWidth, pdfChartHeight);
-                currentY += pdfChartHeight + 2; 
+                currentY += pdfChartHeight + 1; // Reduced space 
             } catch (error) {
                 console.error("Error generando imagen del gráfico:", error);
                  if (currentY + 8 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
                  doc.setTextColor(255, 0, 0); 
                  doc.setFontSize(7); 
                  doc.text('Error generando imagen del gráfico.', leftColX, currentY);
-                 currentY += 6; 
+                 currentY += 5; // Reduced space
                  doc.setTextColor(0, 0, 0); 
                  toast({ title: "Error de Gráfico", description: "No se pudo generar la imagen del gráfico para el PDF.", variant: "destructive" });
             }
 
             const notesStartY = currentY;
-            if (notesStartY + 40 > pageHeight - margin - footerHeight) { 
+            if (notesStartY + 35 > pageHeight - margin - footerHeight) { // Adjusted height check
                 doc.addPage();
                 currentY = margin; 
             } else {
@@ -438,7 +443,7 @@ export function InsulationResistanceAnalyzer() {
             }
 
             doc.setFontSize(7); doc.setFont(undefined, 'italic'); doc.setTextColor(100, 100, 100); 
-            const boxPadding = 2; 
+            const boxPadding = 1.8; // Notes font size
             let textY = currentY + boxPadding + 2.5; 
 
             const drawStyledText = (textParts: { text: string; bold?: boolean }[], x: number, y: number, maxWidth: number) => {
@@ -458,7 +463,7 @@ export function InsulationResistanceAnalyzer() {
                             lines.push(currentLine);
                             currentLine = [];
                             currentX = x;
-                            currentLineY += 3; 
+                            currentLineY += 2.8; // Reduced line height
                         }
                          currentLine.push({ text: word + ' ', bold: !!part.bold, x: currentX, y: currentLineY });
                          currentX += wordWidth;
@@ -474,7 +479,7 @@ export function InsulationResistanceAnalyzer() {
                     });
                  });
 
-                return currentLineY + 3; 
+                return currentLineY + 2.8; // Reduced line height
             };
 
 
@@ -486,7 +491,7 @@ export function InsulationResistanceAnalyzer() {
                 { text: ", crucial para prevenir fallas eléctricas." }
             ];
             textY = drawStyledText(note1Parts, leftColX + boxPadding, textY, colWidth - boxPadding * 2);
-            textY += 1.5; 
+            textY += 1; // Reduced space
 
 
             const note2Parts = [
@@ -501,7 +506,7 @@ export function InsulationResistanceAnalyzer() {
             const boxHeight = textY - (currentY + boxPadding + 2.5) + boxPadding; 
             doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); 
             doc.roundedRect(leftColX, currentY, colWidth, boxHeight + boxPadding * 2, 1.5, 1.5, 'S'); 
-            currentY = currentY + boxHeight + boxPadding * 2 + 2.5; 
+            currentY = currentY + boxHeight + boxPadding * 2 + 2; // Reduced space
             doc.setFont(undefined, 'normal'); doc.setTextColor(0, 0, 0); 
             leftColEndY = currentY;
 
@@ -509,7 +514,7 @@ export function InsulationResistanceAnalyzer() {
         } else {
             if (currentY + 8 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
             doc.setFontSize(7); 
-            doc.text('Gráfico no disponible.', leftColX, currentY); currentY += 6; 
+            doc.text('Gráfico no disponible.', leftColX, currentY); currentY += 5; // Reduced space
             leftColEndY = currentY;
         }
 
@@ -518,13 +523,13 @@ export function InsulationResistanceAnalyzer() {
 
         if (polarizationIndex !== null || dielectricAbsorptionRatio !== null) {
              const indicesCardStartY = currentY;
-             if (currentY + 25 > pageHeight - margin - footerHeight) { 
+             if (currentY + 22 > pageHeight - margin - footerHeight) { // Adjusted height check
                  doc.addPage(); currentY = margin;
              }
 
-             currentY += 1.5; 
+             currentY += 1; // Reduced space
              doc.setFontSize(9); doc.setFont(undefined, 'bold'); 
-             doc.text('Índices Calculados', rightColX + 2, currentY + 2.5); currentY += 5; 
+             doc.text('Índices Calculados', rightColX + 2, currentY + 2.5); currentY += 4; // Reduced space
              doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
 
              const piValue = polarizationIndex !== null ? (isFinite(polarizationIndex) ? polarizationIndex.toFixed(2) : '∞') : 'N/D';
@@ -534,13 +539,13 @@ export function InsulationResistanceAnalyzer() {
 
              const drawIndexRow = (label: string, value: string, condition: string, y: number): number => {
                 const labelX = rightColX + 2;
-                const valueX = rightColX + colWidth - 24; 
-                const badgeX = rightColX + colWidth - 22; 
-                const badgeWidth = 20; const badgeHeight = 4.5; 
+                const valueX = rightColX + colWidth - 22; // Adjusted for smaller badge
+                const badgeX = rightColX + colWidth - 20; // Adjusted for smaller badge
+                const badgeWidth = 18; const badgeHeight = 4; // Smaller badge
                 doc.setFontSize(7); doc.setFont(undefined, 'medium'); 
-                doc.text(label, labelX, y + 2.5); 
+                doc.text(label, labelX, y + 2.2); // Adjusted Y
                 doc.setFont(undefined, 'bold');
-                doc.text(value, valueX, y + 2.5, { align: 'right' }); 
+                doc.text(value, valueX, y + 2.2, { align: 'right' });  // Adjusted Y
 
                 let fillColor: [number, number, number] = [220, 220, 220]; 
                 let textColor: [number, number, number] = [50, 50, 50]; 
@@ -551,40 +556,40 @@ export function InsulationResistanceAnalyzer() {
                    case 'malo': case 'peligroso': fillColor = [220, 53, 69]; textColor = [255, 255, 255]; break; 
                 }
                 doc.setFillColor(fillColor[0], fillColor[1], fillColor[2]); doc.setDrawColor(fillColor[0], fillColor[1], fillColor[2]); 
-                doc.roundedRect(badgeX, y, badgeWidth, badgeHeight, 1.2, 1.2, 'FD'); 
-                doc.setFontSize(6.5); doc.setFont(undefined, 'semibold'); doc.setTextColor(textColor[0], textColor[1], textColor[2]); 
-                doc.text(condition, badgeX + badgeWidth / 2, y + badgeHeight / 2 + 0.3, { align: 'center', baseline: 'middle' }); 
+                doc.roundedRect(badgeX, y, badgeWidth, badgeHeight, 1, 1, 'FD'); // Smaller radius
+                doc.setFontSize(6); doc.setFont(undefined, 'semibold'); doc.setTextColor(textColor[0], textColor[1], textColor[2]); // Smaller badge font
+                doc.text(condition, badgeX + badgeWidth / 2, y + badgeHeight / 2 + 0.2, { align: 'center', baseline: 'middle' }); // Adjusted Y
                 doc.setTextColor(0, 0, 0); 
-                return y + badgeHeight + 0.8; 
+                return y + badgeHeight + 0.5; // Reduced space
              }
 
              const startYPi = currentY;
              currentY = drawIndexRow('Índice de Polarización (PI):', piValue, piCondition, currentY);
              currentY = drawIndexRow('Ratio Absorción Dieléctrica (DAR):', darValue, darCondition, currentY);
-             const indicesCardEndY = currentY + 0.2; 
+             const indicesCardEndY = currentY + 0.1; // Reduced space
 
              doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); 
              doc.roundedRect(rightColX - 1, indicesCardStartY - 1, colWidth + 2, indicesCardEndY - indicesCardStartY + 1, 1.5, 1.5, 'S'); 
 
-             currentY = indicesCardEndY + 2.5; 
+             currentY = indicesCardEndY + 2; // Reduced space
         }
       
 
         const refCardStartY = currentY;
-        if (currentY + 50 > pageHeight - margin - footerHeight) { 
+        if (currentY + 45 > pageHeight - margin - footerHeight) { // Adjusted height check
             doc.addPage(); currentY = margin;
         }
 
         const refBorderStartY = currentY; 
-        currentY += 1; 
+        currentY += 0.8; // Reduced space
         doc.setFontSize(9); doc.setFont(undefined, 'bold'); 
-        doc.text('Valores de Referencia (IEEE Std 43-2013)', rightColX + 2, currentY + 2.5); currentY += 6; 
+        doc.text('Valores de Referencia (IEEE Std 43-2013)', rightColX + 2, currentY + 2.5); currentY += 5; // Reduced space
         doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
 
         const tableConfig = {
           theme: 'grid' as const,
-          styles: { fontSize: 6.5, cellPadding: 0.8, halign: 'left' }, 
-          headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 7 }, 
+          styles: { fontSize: 6, cellPadding: 0.7, halign: 'left' }, // Smaller font and padding
+          headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 6.5 }, // Smaller head font
           tableWidth: colWidth,
           margin: { left: rightColX },
           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; } 
@@ -593,67 +598,67 @@ export function InsulationResistanceAnalyzer() {
         autoTable(doc, {
           startY: currentY, head: [['Valor PI', 'Condición']], body: [['< 1.0', 'Peligroso'], ['1.0 - 2.0', 'Cuestionable'], ['2.0 - 4.0', 'Bueno'], ['> 4.0', 'Excelente']], ...tableConfig, columnStyles: { 0: { halign: 'center' }, 1: { halign: 'left' } },
           didDrawTable: (data) => {
-            doc.setFontSize(6.5); doc.setTextColor(100, 100, 100); 
-            doc.text("Referencia Índice de Polarización (PI)", rightColX + colWidth/2 , data.cursor.y + 2.5, { align: 'center' }); 
-            currentY = data.cursor.y + 5; 
+            doc.setFontSize(6); doc.setTextColor(100, 100, 100); // Smaller caption font
+            doc.text("Referencia Índice de Polarización (PI)", rightColX + colWidth/2 , data.cursor.y + 2.2, { align: 'center' }); // Adjusted Y
+            currentY = data.cursor.y + 4; // Reduced space
           },
         });
 
-        currentY += 2.5; 
+        currentY += 2; // Reduced space
 
-        if (currentY + 25 > pageHeight - margin - footerHeight) { 
+        if (currentY + 22 > pageHeight - margin - footerHeight) { // Adjusted height check
              doc.addPage(); currentY = margin;
         }
         autoTable(doc, {
           startY: currentY, head: [['Valor DAR', 'Condición']], body: [['< 1.0', 'Malo'], ['1.0 - 1.25', 'Cuestionable'], ['1.25 - 1.6', 'Bueno'], ['> 1.6', 'Excelente']], ...tableConfig, columnStyles: { 0: { halign: 'center' }, 1: { halign: 'left' } },
            didDrawTable: (data) => {
-            doc.setFontSize(6.5); doc.setTextColor(100, 100, 100); 
-            doc.text("Referencia Ratio de Absorción Dieléctrica (DAR)", rightColX + colWidth/2, data.cursor.y + 2.5, { align: 'center' }); 
-            currentY = data.cursor.y + 5; 
+            doc.setFontSize(6); doc.setTextColor(100, 100, 100); // Smaller caption font
+            doc.text("Referencia Ratio de Absorción Dieléctrica (DAR)", rightColX + colWidth/2, data.cursor.y + 2.2, { align: 'center' }); // Adjusted Y
+            currentY = data.cursor.y + 4; // Reduced space
           },
         });
 
         const refCardEndY = currentY; 
         doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); 
         doc.roundedRect(rightColX - 1, refBorderStartY - 1, colWidth + 2, refCardEndY - refBorderStartY + 1, 1.5, 1.5, 'S'); 
-        currentY = refCardEndY + 2.5; 
+        currentY = refCardEndY + 2; // Reduced space
 
 
          const formulaNotesStartY = currentY;
-         if (formulaNotesStartY + 18 > pageHeight - margin - footerHeight) { 
+         if (formulaNotesStartY + 16 > pageHeight - margin - footerHeight) { // Adjusted height check
              doc.addPage(); currentY = margin;
          }
          else { currentY = formulaNotesStartY; } 
 
-         const formulaBoxPadding = 1.8; 
-         let formulaTextY = currentY + formulaBoxPadding + 2.5; 
+         const formulaBoxPadding = 1.5; // Reduced padding
+         let formulaTextY = currentY + formulaBoxPadding + 2.2; // Adjusted Y
 
          const formulaTitle = "Cálculo de PI y DAR:";
          const piFormulaText = "PI: Resistencia a 10 min / Resistencia a 1 min.";
          const darFormulaText = "DAR: Resistencia a 1 min / Resistencia a 30 seg.";
 
-         doc.setFontSize(8); doc.setFont(undefined, 'bold'); 
+         doc.setFontSize(7.5); doc.setFont(undefined, 'bold'); // Slightly smaller title
          doc.text(formulaTitle, rightColX + formulaBoxPadding, formulaTextY); 
-         formulaTextY += 4; 
+         formulaTextY += 3.5; // Reduced space
 
-         doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
+         doc.setFontSize(6.5); doc.setFont(undefined, 'normal'); // Smaller formula text
          doc.text(piFormulaText, rightColX + formulaBoxPadding, formulaTextY); 
-         formulaTextY += 4; 
+         formulaTextY += 3.5; // Reduced space
          doc.text(darFormulaText, rightColX + formulaBoxPadding, formulaTextY); 
-         formulaTextY += 0.8; 
+         formulaTextY += 0.6; // Reduced space
 
          const formulaBoxHeight = formulaTextY - currentY; 
          doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); 
-         doc.roundedRect(rightColX - 1, currentY - 1, colWidth + 2, formulaBoxHeight + formulaBoxPadding * 2 + 0.8, 1.5, 1.5, 'S'); 
-         currentY = currentY + formulaBoxHeight + formulaBoxPadding * 2 + 2.5; 
+         doc.roundedRect(rightColX - 1, currentY - 1, colWidth + 2, formulaBoxHeight + formulaBoxPadding * 2 + 0.6, 1.5, 1.5, 'S'); 
+         currentY = currentY + formulaBoxHeight + formulaBoxPadding * 2 + 2; // Reduced space
 
          rightColEndY = currentY; 
 
 
         currentY = Math.max(leftColEndY, rightColEndY);
 
-         const signatureRequiredHeight = 18; 
-         const signatureTopMargin = 4; 
+         const signatureRequiredHeight = 16; // Reduced height
+         const signatureTopMargin = 3; // Reduced margin
 
          let signatureStartY = pageHeight - margin - footerHeight - signatureRequiredHeight;
 
@@ -667,22 +672,22 @@ export function InsulationResistanceAnalyzer() {
          }
 
 
-         doc.setFontSize(7); 
-         const signatureLineLength = 60; 
-         const signatureGap = 8; 
+         doc.setFontSize(6.5); // Smaller signature font
+         const signatureLineLength = 55; // Shorter line
+         const signatureGap = 7; // Smaller gap
          const signatureWidth = signatureLineLength;
          const totalSignatureWidth = signatureWidth * 2 + signatureGap;
          const signatureStartX = (pageWidth - totalSignatureWidth) / 2; 
 
          const testerSigX = signatureStartX;
          doc.text('Firma del Técnico:', testerSigX, signatureStartY);
-         doc.line(testerSigX, signatureStartY + 3.5, testerSigX + signatureLineLength, signatureStartY + 3.5); 
+         doc.line(testerSigX, signatureStartY + 3, testerSigX + signatureLineLength, signatureStartY + 3); // Adjusted Y for line
 
          const supervisorSigX = testerSigX + signatureWidth + signatureGap;
          doc.text('Firma del Supervisor:', supervisorSigX, signatureStartY);
-         doc.line(supervisorSigX, signatureStartY + 3.5, supervisorSigX + signatureLineLength, signatureStartY + 3.5); 
+         doc.line(supervisorSigX, signatureStartY + 3, supervisorSigX + signatureLineLength, signatureStartY + 3); // Adjusted Y for line
 
-         currentY = signatureStartY + 12; 
+         currentY = signatureStartY + 10; // Reduced space
 
 
          addFooter(doc);
@@ -780,48 +785,60 @@ export function InsulationResistanceAnalyzer() {
                   Lecturas de Resistencia de Aislamiento (G-OHM) 
                 </CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {timePoints.map((point) => (
-                  <FormField
-                    key={point.value}
-                    control={form.control}
-                    name={`readings.t${point.value}`}
-                    render={({ field, fieldState }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground/80">{point.label}</FormLabel>
-                        <FormControl>
-                          <Input
-                             type="number"
-                             step="any"
-                             placeholder="G-OHM" 
-                             {...field}
-                             className={cn("rounded-md",fieldState.error && "border-destructive focus-visible:ring-destructive")}
-                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+              <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-6 items-end">
+                {timePoints.map((point, index) => (
+                  <React.Fragment key={point.value}>
+                    <FormField
+                      
+                      control={form.control}
+                      name={`readings.t${point.value}`}
+                      render={({ field, fieldState }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground/80">{point.label}</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="any"
+                              placeholder="G-OHM"
+                              {...field}
+                              className={cn("rounded-md", fieldState.error && "border-destructive focus-visible:ring-destructive")}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {/* Insert Stopwatch after 10 min input (index 12), ensuring it's in the last column effectively */}
+                    {point.value === 600 && (
+                       <div className="flex items-end justify-start lg:justify-center h-full pb-2"> {/* Align to bottom of cell, add padding */}
+                        <Button
+                          variant="ghost"
+                          type="button"
+                          onClick={handleStopwatchToggle}
+                          className="text-2xl text-muted-foreground p-0 h-auto flex items-center hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                          aria-label={isStopwatchRunning ? "Reiniciar cronómetro" : "Iniciar cronómetro"}
+                        >
+                          {isStopwatchRunning ? (
+                            <RefreshCcw className="mr-2 h-6 w-6" />
+                          ) : (
+                            <Play className="mr-2 h-6 w-6" />
+                          )}
+                          <span>{formatStopwatchTime(stopwatchTime)}</span>
+                        </Button>
+                      </div>
                     )}
-                  />
+                  </React.Fragment>
                 ))}
+                 {/* If timePoints.length is not a multiple of 5, add empty divs to fill the last row if stopwatch is not there or not in the last cell */}
+                 { (timePoints.length % 5 !== 0 && timePoints[timePoints.length -1].value !== 600) && 
+                    Array.from({ length: 5 - (timePoints.length % 5) - (timePoints[timePoints.length-1].value === 600 ? 1: 0) }).map((_, i) => <div key={`empty-${i}`} />)
+                 }
+
               </CardContent>
-                 <CardFooter className="text-xs text-muted-foreground pt-4 flex items-center justify-between"> 
+                 <CardFooter className="text-xs text-muted-foreground pt-4 flex items-center justify-start"> 
                      <div className="flex items-center"> 
                        <AlertCircle className="mr-1 h-3 w-3 text-muted-foreground/70" /> Introduce las lecturas en Gigaohmios (G-OHM). Introduce 0 si la lectura es 0. 
                      </div>
-                     <Button
-                        variant="ghost"
-                        type="button" 
-                        onClick={handleStopwatchToggle}
-                        className="text-2xl text-muted-foreground p-0 h-auto flex items-center hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-                        aria-label={isStopwatchRunning ? "Reiniciar cronómetro" : "Iniciar cronómetro"}
-                      >
-                        {isStopwatchRunning ? (
-                          <RefreshCcw className="mr-2 h-6 w-6" />
-                        ) : (
-                          <Play className="mr-2 h-6 w-6" />
-                        )}
-                        <span>{formatStopwatchTime(stopwatchTime)}</span>
-                      </Button>
                  </CardFooter>
             </Card>
 
@@ -922,3 +939,4 @@ export function InsulationResistanceAnalyzer() {
    </>
   );
 }
+
