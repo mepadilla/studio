@@ -5,11 +5,11 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
-import { Calculator, FileText, Thermometer, FileDown, AlertCircle, CalendarClock, Link as LinkIcon } from 'lucide-react'; // Added CalendarClock & LinkIcon
+import { Calculator, FileText, Thermometer, FileDown, AlertCircle, Play, RefreshCcw, Link as LinkIcon } from 'lucide-react'; // Added Play, RefreshCcw, removed CalendarClock
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
-import { format } from 'date-fns'; // Import format function
+import { format } from 'date-fns'; 
 
 import { Button } from '@/components/ui/button';
 import {
@@ -33,9 +33,9 @@ import { Separator } from '@/components/ui/separator';
 import { ResistanceChart } from '@/components/resistance-chart';
 import { IndexResults } from '@/components/index-results';
 import { IndexReferenceTable } from '@/components/index-reference-table';
-import { Toaster } from '@/components/ui/toaster'; // Import Toaster
-import { useToast } from '@/hooks/use-toast'; // Import useToast
-import { cn } from '@/lib/utils'; // Import cn for conditional classes
+import { Toaster } from '@/components/ui/toaster'; 
+import { useToast } from '@/hooks/use-toast'; 
+import { cn } from '@/lib/utils'; 
 
 // Define time points for resistance readings
 const timePoints = [
@@ -61,16 +61,15 @@ const formSchema = z.object({
   motorSerial: z.string().min(1, 'Número de serie del motor es requerido'),
   readings: z.object(
     timePoints.reduce((acc, point) => {
-      // Allow empty string initially, but validate as positive number on submit
        acc[`t${point.value}`] = z.union([
-          z.literal(''), // Allow empty string
-           z.coerce // Coerce to number for validation
+          z.literal(''), 
+           z.coerce 
              .number({ invalid_type_error: 'Debe ser un número' })
              .positive('Debe ser positivo')
              .gt(0, 'Debe ser mayor que 0')
-       ]).refine(val => val !== '', { message: 'Lectura requerida' }); // Ensure not empty on submit
+       ]).refine(val => val !== '', { message: 'Lectura requerida' }); 
       return acc;
-    }, {} as Record<string, z.ZodUnion<[z.ZodLiteral<''>, z.ZodNumber]>>) // Adjust type here
+    }, {} as Record<string, z.ZodUnion<[z.ZodLiteral<''>, z.ZodNumber]>>) 
   ),
 });
 
@@ -82,7 +81,7 @@ type ResistanceDataPoint = { time: number; resistance: number };
 // Helper: Returns condition based on value and type in Spanish
 function getCondition(value: number | typeof Infinity, type: 'PI' | 'DAR'): string {
    if (!isFinite(value)) {
-       return 'Excelente'; // Consider Infinity as Excellent
+       return 'Excelente'; 
    }
     if (type === 'PI') {
       if (value < 1.0) return 'Peligroso';
@@ -95,25 +94,27 @@ function getCondition(value: number | typeof Infinity, type: 'PI' | 'DAR'): stri
       if (value >= 1.25 && value <= 1.6) return 'Bueno';
       if (value > 1.6) return 'Excelente';
     }
-    return 'N/D'; // No Disponible
+    return 'N/D'; 
 }
 
 
 export function InsulationResistanceAnalyzer() {
   const [polarizationIndex, setPolarizationIndex] = React.useState<
-    number | null | typeof Infinity // Allow Infinity
+    number | null | typeof Infinity 
   >(null);
   const [dielectricAbsorptionRatio, setDielectricAbsorptionRatio] =
-    React.useState<number | null | typeof Infinity>(null); // Allow Infinity
+    React.useState<number | null | typeof Infinity>(null); 
   const [chartData, setChartData] = React.useState<ResistanceDataPoint[]>([]);
-  const [formDataForPdf, setFormDataForPdf] = React.useState<FormData | null>(null); // Renamed to avoid conflict with RHF's formData
+  const [formDataForPdf, setFormDataForPdf] = React.useState<FormData | null>(null); 
   const [isLoadingPdf, setIsLoadingPdf] = React.useState(false);
-  const [showResults, setShowResults] = React.useState(false); // State to control results visibility
-  const [currentTime, setCurrentTime] = React.useState<string>(''); // State for real-time clock
-  const resultsRef = React.useRef<HTMLDivElement>(null); // Ref for scrolling
-  const innerChartRef = React.useRef<HTMLDivElement>(null); // Ref for the inner chart container used in PDF
+  const [showResults, setShowResults] = React.useState(false); 
+  const resultsRef = React.useRef<HTMLDivElement>(null); 
+  const innerChartRef = React.useRef<HTMLDivElement>(null); 
 
-  const { toast } = useToast(); // Initialize toast
+  const [stopwatchTime, setStopwatchTime] = React.useState<number>(0);
+  const [isStopwatchRunning, setIsStopwatchRunning] = React.useState<boolean>(false);
+
+  const { toast } = useToast(); 
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -122,29 +123,51 @@ export function InsulationResistanceAnalyzer() {
       motorId: '',
       motorSerial: '',
       readings: timePoints.reduce((acc, point) => {
-        acc[`t${point.value}`] = ''; // Initialize with empty string for input control
+        acc[`t${point.value}`] = ''; 
         return acc;
-      }, {} as any), // Use 'as any' here, Zod handles type coercion
+      }, {} as any), 
     },
-     mode: 'onBlur', // Validate on blur
+     mode: 'onBlur', 
   });
 
-  // Effect for real-time clock
   React.useEffect(() => {
-    // Set initial time
-    setCurrentTime(format(new Date(), 'HH:mm:ss'));
-
-    const timerId = setInterval(() => {
-      setCurrentTime(format(new Date(), 'HH:mm:ss'));
-    }, 1000);
-
+    let intervalId: NodeJS.Timeout | undefined;
+    if (isStopwatchRunning) {
+      intervalId = setInterval(() => {
+        setStopwatchTime((prevTime) => prevTime + 1);
+      }, 1000);
+    } else {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    }
     return () => {
-      clearInterval(timerId); // Cleanup interval on component unmount
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
     };
-  }, []); // Empty dependency array ensures this effect runs only once on mount and unmount
+  }, [isStopwatchRunning]);
+
+  const formatStopwatchTime = (timeInSeconds: number): string => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = timeInSeconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
+
+  const handleStopwatchToggle = () => {
+    if (isStopwatchRunning) {
+      // Reset and stop
+      setIsStopwatchRunning(false);
+      setStopwatchTime(0);
+    } else {
+      // Start
+      setStopwatchTime(0); 
+      setIsStopwatchRunning(true);
+    }
+  };
+
 
   const calculateIndices = (readings: FormData['readings']) => {
-    // Ensure readings are numbers before calculation
     const r10min = Number(readings['t600']);
     const r1min = Number(readings['t60']);
     const r30sec = Number(readings['t30']);
@@ -158,7 +181,7 @@ export function InsulationResistanceAnalyzer() {
       } else if (r1min === 0 && r10min > 0) {
         pi = Infinity;
       } else if (r1min === 0 && r10min === 0) {
-        pi = null; // Or handle as undefined/error case? NaN? For now, null.
+        pi = null; 
       }
     }
     setPolarizationIndex(pi);
@@ -170,34 +193,31 @@ export function InsulationResistanceAnalyzer() {
         } else if (r30sec === 0 && r1min > 0) {
             dar = Infinity;
         } else if (r30sec === 0 && r1min === 0) {
-             dar = null; // Or handle as undefined/error case? NaN? For now, null.
+             dar = null; 
         }
     }
     setDielectricAbsorptionRatio(dar);
 
 
-    // Prepare data for the chart, converting valid numbers
     const data: ResistanceDataPoint[] = timePoints
        .map((point) => {
             const resistanceValue = Number(readings[`t${point.value}`]);
             return {
-                time: point.value / 60, // Convert seconds to minutes
-                resistance: isNaN(resistanceValue) ? 0 : resistanceValue, // Use 0 for now if not a number
+                time: point.value / 60, 
+                resistance: isNaN(resistanceValue) ? 0 : resistanceValue, 
             };
        })
-      .filter(point => !isNaN(point.resistance)); // Filter out any potential NaN
+      .filter(point => !isNaN(point.resistance)); 
 
     setChartData(data);
-    setShowResults(true); // Show results section
+    setShowResults(true); 
 
-     // Show success toast
     toast({
       title: "Cálculo Exitoso",
       description: "Los índices PI y DAR se han calculado.",
-      variant: "default", // or "success" if you have that variant
+      variant: "default", 
     });
 
-    // Scroll to results after a short delay to allow rendering
     setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
@@ -205,7 +225,7 @@ export function InsulationResistanceAnalyzer() {
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
     console.log('Formulario Enviado:', data);
-    setFormDataForPdf(data); // Store form data for PDF generation
+    setFormDataForPdf(data); 
     calculateIndices(data.readings);
   };
 
@@ -230,69 +250,59 @@ export function InsulationResistanceAnalyzer() {
          const pageHeight = doc.internal.pageSize.height;
          const pageWidth = doc.internal.pageSize.width;
          const margin = 15;
-         const footerHeight = 15; // Height reserved for footer
+         const footerHeight = 15; 
          const contentWidth = pageWidth - margin * 2;
-         let currentY = margin; // Start Y position
+         let currentY = margin; 
 
-        // --- Function to Add Footer ---
         const addFooter = (docInstance: jsPDF) => {
             const pageCount = docInstance.internal.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
             docInstance.setPage(i);
-            docInstance.setFontSize(7); // Smaller footer font
+            docInstance.setFontSize(7); 
             docInstance.setTextColor(150);
-            const footerY = pageHeight - margin + 5; // Position slightly below bottom margin
+            const footerY = pageHeight - margin + 5; 
 
-            // Left part: Copyright
             const copyrightText = "© 2025, desarrollado por ";
             docInstance.text(copyrightText, margin, footerY, { align: 'left' });
 
-            // Middle part: Link
             const linkText = "Ing. Melvin E. Padilla";
             const linkUrl = "https://www.linkedin.com/in/melvin-padilla-3425106";
             const linkTextWidth = docInstance.getTextWidth(linkText);
             const copyrightTextWidth = docInstance.getTextWidth(copyrightText);
             const linkX = margin + copyrightTextWidth;
 
-            // jsPDF doesn't have built-in rich text formatting for links, we simulate it
-            docInstance.setTextColor(Number('0x1A'), Number('0x23'), Number('0x7E')); // Primary color
+            docInstance.setTextColor(Number('0x1A'), Number('0x23'), Number('0x7E')); 
             docInstance.textWithLink(linkText, linkX, footerY, { url: linkUrl });
-            // Simulate underline if textWithLink doesn't provide it
-            docInstance.setDrawColor(Number('0x1A'), Number('0x23'), Number('0x7E')); // Underline color
-            docInstance.line(linkX, footerY + 0.5, linkX + linkTextWidth, footerY + 0.5); // Underline
+            docInstance.setDrawColor(Number('0x1A'), Number('0x23'), Number('0x7E')); 
+            docInstance.line(linkX, footerY + 0.5, linkX + linkTextWidth, footerY + 0.5); 
 
-            // Right part: Period
             const periodText = ".";
             const periodX = linkX + linkTextWidth;
-            docInstance.setTextColor(150); // Reset to muted color
+            docInstance.setTextColor(150); 
             docInstance.text(periodText, periodX, footerY, { align: 'left' });
 
-            // Page number (far right)
             const pageNumText = `Página ${i} de ${pageCount}`;
             docInstance.text(pageNumText, pageWidth - margin, footerY, { align: 'right' });
             }
-            docInstance.setTextColor(0); // Reset text color for main content
+            docInstance.setTextColor(0); 
         };
 
 
-         // Title
-         doc.setFontSize(14); // Smaller title font
+         doc.setFontSize(14); 
          doc.setFont(undefined, 'bold');
-         doc.setTextColor(Number('0x1A'), Number('0x23'), Number('0x7E')); // Primary color (Dark Blue)
+         doc.setTextColor(Number('0x1A'), Number('0x23'), Number('0x7E')); 
          doc.text('Reporte de Resistencia de Aislamiento', pageWidth / 2, currentY, { align: 'center' });
          doc.setFont(undefined, 'normal');
-         doc.setTextColor(0, 0, 0); // Reset color
-         currentY += 7; // Reduced space after title
+         doc.setTextColor(0, 0, 0); 
+         currentY += 7; 
 
-         // --- Test Details Section ---
-         doc.setFontSize(9); // Smaller section title font
+         doc.setFontSize(9); 
          doc.setFont(undefined, 'bold');
          doc.text('Detalles de la Prueba', margin, currentY);
-         currentY += 5; // Reduced space
-         doc.setFontSize(8); // Table Font
+         currentY += 5; 
+         doc.setFontSize(8); 
          doc.setFont(undefined, 'normal'); 
 
-         // Get current date for the report
          const testDate = format(new Date(), 'dd/MM/yyyy HH:mm');
 
          autoTable(doc, {
@@ -302,11 +312,11 @@ export function InsulationResistanceAnalyzer() {
              ['Nombre del Técnico:', formDataForPdf.testerName],
              ['ID del Motor:', formDataForPdf.motorId],
              ['Nro. de Serie del Motor:', formDataForPdf.motorSerial],
-             ['Fecha de la Prueba:', testDate], // Changed label here
+             ['Fecha de la Prueba:', testDate], 
            ],
            theme: 'grid',
-           styles: { fontSize: 8, cellPadding: 1.2 }, 
-           headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', fontSize: 8 }, 
+           styles: { fontSize: 7, cellPadding: 1.2 }, 
+           headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', fontSize: 7.5 }, 
            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 45 }, 1: { cellWidth: contentWidth - 45} }, 
            margin: { left: margin, right: margin },
            didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
@@ -314,22 +324,19 @@ export function InsulationResistanceAnalyzer() {
          currentY = (doc as any).lastAutoTable.finalY + 6; 
 
 
-         // --- Resistance Readings Section (4 columns) ---
          if (currentY + 45 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } 
-         doc.setFontSize(9); // Section title font
+         doc.setFontSize(9); 
          doc.setFont(undefined, 'bold');
          doc.text('Lecturas de Resistencia de Aislamiento (G-OHM)', margin, currentY); 
-         currentY += 5; // Reduced space
-         doc.setFontSize(7); // Readings Font
+         currentY += 5; 
+         doc.setFontSize(7); 
          doc.setFont(undefined, 'normal'); 
 
-         // Prepare body data for the 4-column layout
          const readingsBody4Col: (string | number)[][] = [];
          const numRows = Math.ceil(timePoints.length / 2); 
 
          for (let i = 0; i < numRows; i++) {
            const row: (string | number)[] = [];
-           // Column 1 & 2 (index i) - Max 6 rows, so index 0 to 5
            const point1Index = i;
             if (point1Index < 6) { 
                const point1 = timePoints[point1Index];
@@ -346,7 +353,6 @@ export function InsulationResistanceAnalyzer() {
            }
 
 
-           // Column 3 & 4 (index i + 6) - Indices 6 to 12
            const point2Index = i + 6; 
            const point2 = timePoints[point2Index];
            if (point2) {
@@ -365,7 +371,7 @@ export function InsulationResistanceAnalyzer() {
            body: readingsBody4Col,
            theme: 'grid',
            styles: { fontSize: 7, cellPadding: 1, halign: 'center' }, 
-           headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 7.5 }, 
+           headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 7 }, 
            columnStyles: {
              0: { cellWidth: 'auto', halign: 'left' },
              1: { cellWidth: 'auto', halign: 'center' }, 
@@ -378,8 +384,6 @@ export function InsulationResistanceAnalyzer() {
          currentY = (doc as any).lastAutoTable.finalY + 6; 
 
 
-        // --- Results Section (Indices, Chart, Reference Tables) ---
-        // Layout similar to the HTML view (Chart left, Indices/Reference right)
         const resultsStartY = currentY;
         const leftColX = margin;
         const rightColX = margin + contentWidth / 2 + 3; 
@@ -387,7 +391,6 @@ export function InsulationResistanceAnalyzer() {
         let leftColEndY = resultsStartY;
         let rightColEndY = resultsStartY;
 
-        // --- Column 1: Chart, Descriptive Notes ---
         const chartElement = innerChartRef.current;
         if (chartElement && chartData.length > 0) {
             const chartTitleY = currentY;
@@ -395,10 +398,9 @@ export function InsulationResistanceAnalyzer() {
             doc.setFontSize(9); doc.setFont(undefined, 'bold'); 
             doc.text('Gráfico Resistencia vs. Tiempo', leftColX, currentY);
             currentY += 4; 
-            doc.setFontSize(8); doc.setFont(undefined, 'normal'); 
+            doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
 
             try {
-                // Add a small delay to ensure chart rendering completes before canvas capture
                 await new Promise(resolve => setTimeout(resolve, 300));
                 const canvas = await html2canvas(chartElement, { scale: 1.6, backgroundColor: '#ffffff', logging: false, useCORS: true });
                 const imgData = canvas.toDataURL('image/png');
@@ -406,33 +408,28 @@ export function InsulationResistanceAnalyzer() {
                 const pdfChartWidth = colWidth; 
                 const pdfChartHeight = (imgProps.height * pdfChartWidth) / imgProps.width;
 
-                // Check if chart fits on the current page, considering footer
                 if (currentY + pdfChartHeight > pageHeight - margin - footerHeight) {
                   doc.addPage(); 
                   currentY = margin; 
-                   // Retitle if needed on new page
                   doc.setFontSize(9); doc.setFont(undefined, 'bold'); 
                   doc.text('Gráfico Resistencia vs. Tiempo', leftColX, currentY); currentY += 4; 
-                  doc.setFontSize(8); doc.setFont(undefined, 'normal'); 
+                  doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
                 }
 
                 doc.addImage(imgData, 'PNG', leftColX, currentY, pdfChartWidth, pdfChartHeight);
                 currentY += pdfChartHeight + 2; 
             } catch (error) {
                 console.error("Error generando imagen del gráfico:", error);
-                 // Add error message to PDF if chart generation fails
                  if (currentY + 8 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
                  doc.setTextColor(255, 0, 0); 
-                 doc.setFontSize(8); 
+                 doc.setFontSize(7); 
                  doc.text('Error generando imagen del gráfico.', leftColX, currentY);
                  currentY += 6; 
                  doc.setTextColor(0, 0, 0); 
                  toast({ title: "Error de Gráfico", description: "No se pudo generar la imagen del gráfico para el PDF.", variant: "destructive" });
             }
 
-           // --- Descriptive Notes Section (inside a box) --- Positioned Below Chart
             const notesStartY = currentY;
-            // Check if notes box fits on the current page
             if (notesStartY + 40 > pageHeight - margin - footerHeight) { 
                 doc.addPage();
                 currentY = margin; 
@@ -440,11 +437,10 @@ export function InsulationResistanceAnalyzer() {
                  currentY = notesStartY; 
             }
 
-            doc.setFontSize(7); doc.setFont(undefined, 'italic'); doc.setTextColor(100, 100, 100); // Notes font size
+            doc.setFontSize(7); doc.setFont(undefined, 'italic'); doc.setTextColor(100, 100, 100); 
             const boxPadding = 2; 
             let textY = currentY + boxPadding + 2.5; 
 
-            // Function to draw text with bold parts
             const drawStyledText = (textParts: { text: string; bold?: boolean }[], x: number, y: number, maxWidth: number) => {
                 let currentX = x;
                 let currentLineY = y;
@@ -511,47 +507,41 @@ export function InsulationResistanceAnalyzer() {
 
 
         } else {
-             // Fallback if no chart data
             if (currentY + 8 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
-            doc.setFontSize(8); 
+            doc.setFontSize(7); 
             doc.text('Gráfico no disponible.', leftColX, currentY); currentY += 6; 
             leftColEndY = currentY;
         }
 
 
-        // --- Column 2: Indices & Reference & Formulas ---
         currentY = resultsStartY; 
 
-        // Indices Results Card
         if (polarizationIndex !== null || dielectricAbsorptionRatio !== null) {
              const indicesCardStartY = currentY;
-             // Check if indices card fits
-             if (currentY + 25 > pageHeight - margin - footerHeight) { // Adjusted Estimate height to 25
+             if (currentY + 25 > pageHeight - margin - footerHeight) { 
                  doc.addPage(); currentY = margin;
              }
 
              currentY += 1.5; 
              doc.setFontSize(9); doc.setFont(undefined, 'bold'); 
              doc.text('Índices Calculados', rightColX + 2, currentY + 2.5); currentY += 5; 
-             doc.setFontSize(8); doc.setFont(undefined, 'normal'); 
+             doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
 
              const piValue = polarizationIndex !== null ? (isFinite(polarizationIndex) ? polarizationIndex.toFixed(2) : '∞') : 'N/D';
              const piCondition = polarizationIndex !== null ? getCondition(polarizationIndex, 'PI') : 'N/D';
              const darValue = dielectricAbsorptionRatio !== null ? (isFinite(dielectricAbsorptionRatio) ? dielectricAbsorptionRatio.toFixed(2) : '∞') : 'N/D';
              const darCondition = dielectricAbsorptionRatio !== null ? getCondition(dielectricAbsorptionRatio, 'DAR') : 'N/D';
 
-             // Helper to draw a row in the indices card (Label, Value, Badge)
              const drawIndexRow = (label: string, value: string, condition: string, y: number): number => {
                 const labelX = rightColX + 2;
                 const valueX = rightColX + colWidth - 24; 
                 const badgeX = rightColX + colWidth - 22; 
                 const badgeWidth = 20; const badgeHeight = 4.5; 
-                doc.setFontSize(8); doc.setFont(undefined, 'medium'); 
+                doc.setFontSize(7); doc.setFont(undefined, 'medium'); 
                 doc.text(label, labelX, y + 2.5); 
                 doc.setFont(undefined, 'bold');
                 doc.text(value, valueX, y + 2.5, { align: 'right' }); 
 
-                // Determine badge color based on condition
                 let fillColor: [number, number, number] = [220, 220, 220]; 
                 let textColor: [number, number, number] = [50, 50, 50]; 
                 switch (condition.toLowerCase()) {
@@ -571,20 +561,17 @@ export function InsulationResistanceAnalyzer() {
              const startYPi = currentY;
              currentY = drawIndexRow('Índice de Polarización (PI):', piValue, piCondition, currentY);
              currentY = drawIndexRow('Ratio Absorción Dieléctrica (DAR):', darValue, darCondition, currentY);
-             const indicesCardEndY = currentY + 0.2; // Added small constant to ensure border is below last element
+             const indicesCardEndY = currentY + 0.2; 
 
              doc.setDrawColor(Number('0xD1'), Number('0xD5'), Number('0xDB')); 
-             // Adjust height to fit content exactly + small padding
              doc.roundedRect(rightColX - 1, indicesCardStartY - 1, colWidth + 2, indicesCardEndY - indicesCardStartY + 1, 1.5, 1.5, 'S'); 
 
              currentY = indicesCardEndY + 2.5; 
         }
       
 
-        // Reference Tables Card
         const refCardStartY = currentY;
-        // Check if reference tables fit
-        if (currentY + 50 > pageHeight - margin - footerHeight) { // Adjusted Estimate height to 50
+        if (currentY + 50 > pageHeight - margin - footerHeight) { 
             doc.addPage(); currentY = margin;
         }
 
@@ -594,17 +581,15 @@ export function InsulationResistanceAnalyzer() {
         doc.text('Valores de Referencia (IEEE Std 43-2013)', rightColX + 2, currentY + 2.5); currentY += 6; 
         doc.setFontSize(7); doc.setFont(undefined, 'normal'); 
 
-        // Common config for reference tables
         const tableConfig = {
           theme: 'grid' as const,
-          styles: { fontSize: 7, cellPadding: 0.8, halign: 'left' }, 
-          headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 7.5 }, 
+          styles: { fontSize: 6.5, cellPadding: 0.8, halign: 'left' }, 
+          headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center', fontSize: 7 }, 
           tableWidth: colWidth,
           margin: { left: rightColX },
           didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; } 
         };
 
-        // PI Reference Table
         autoTable(doc, {
           startY: currentY, head: [['Valor PI', 'Condición']], body: [['< 1.0', 'Peligroso'], ['1.0 - 2.0', 'Cuestionable'], ['2.0 - 4.0', 'Bueno'], ['> 4.0', 'Excelente']], ...tableConfig, columnStyles: { 0: { halign: 'center' }, 1: { halign: 'left' } },
           didDrawTable: (data) => {
@@ -614,13 +599,11 @@ export function InsulationResistanceAnalyzer() {
           },
         });
 
-        currentY += 2.5; // Use the same reduced padding as after indices (was 2)
+        currentY += 2.5; 
 
-        // Check for page break before DAR table
-        if (currentY + 25 > pageHeight - margin - footerHeight) { // Adjusted Estimate DAR table height to 25
+        if (currentY + 25 > pageHeight - margin - footerHeight) { 
              doc.addPage(); currentY = margin;
         }
-        // DAR Reference Table
         autoTable(doc, {
           startY: currentY, head: [['Valor DAR', 'Condición']], body: [['< 1.0', 'Malo'], ['1.0 - 1.25', 'Cuestionable'], ['1.25 - 1.6', 'Bueno'], ['> 1.6', 'Excelente']], ...tableConfig, columnStyles: { 0: { halign: 'center' }, 1: { halign: 'left' } },
            didDrawTable: (data) => {
@@ -636,9 +619,7 @@ export function InsulationResistanceAnalyzer() {
         currentY = refCardEndY + 2.5; 
 
 
-        // --- Formula Notes Section --- Positioned Below Reference Tables
          const formulaNotesStartY = currentY;
-         // Check if formula box fits
          if (formulaNotesStartY + 18 > pageHeight - margin - footerHeight) { 
              doc.addPage(); currentY = margin;
          }
@@ -669,42 +650,34 @@ export function InsulationResistanceAnalyzer() {
          rightColEndY = currentY; 
 
 
-        // --- Move Y to below the longest column before signatures ---
         currentY = Math.max(leftColEndY, rightColEndY);
 
-         // --- Signature Section --- Positioned at the bottom, side-by-side ---
          const signatureRequiredHeight = 18; 
          const signatureTopMargin = 4; 
 
-          // Calculate Y position for signatures, ensuring they are above the footer space
          let signatureStartY = pageHeight - margin - footerHeight - signatureRequiredHeight;
 
-         // Check if content overlaps signature area, add page if necessary
          if (currentY > signatureStartY - signatureTopMargin) {
              doc.addPage();
              currentY = margin; 
              signatureStartY = margin; 
          } else {
-              // Place signatures dynamically below content but above footer area
-              // Ensure at least `signatureTopMargin` space above signatures
              currentY = Math.max(currentY + signatureTopMargin, signatureStartY);
              signatureStartY = currentY;
          }
 
 
-         doc.setFontSize(8); 
+         doc.setFontSize(7); 
          const signatureLineLength = 60; 
          const signatureGap = 8; 
          const signatureWidth = signatureLineLength;
          const totalSignatureWidth = signatureWidth * 2 + signatureGap;
          const signatureStartX = (pageWidth - totalSignatureWidth) / 2; 
 
-         // Tester Signature (Left)
          const testerSigX = signatureStartX;
          doc.text('Firma del Técnico:', testerSigX, signatureStartY);
          doc.line(testerSigX, signatureStartY + 3.5, testerSigX + signatureLineLength, signatureStartY + 3.5); 
 
-         // Supervisor Signature (Right)
          const supervisorSigX = testerSigX + signatureWidth + signatureGap;
          doc.text('Firma del Supervisor:', supervisorSigX, signatureStartY);
          doc.line(supervisorSigX, signatureStartY + 3.5, supervisorSigX + signatureLineLength, signatureStartY + 3.5); 
@@ -712,10 +685,8 @@ export function InsulationResistanceAnalyzer() {
          currentY = signatureStartY + 12; 
 
 
-         // --- Add Footer to all pages ---
          addFooter(doc);
 
-         // Save the PDF
          doc.save(`Reporte_Resistencia_Aislamiento_${formDataForPdf.motorId || 'Motor'}.pdf`);
          toast({
              title: "PDF Generado",
@@ -738,7 +709,7 @@ export function InsulationResistanceAnalyzer() {
 
   return (
     <>
-     <Toaster /> {/* Add Toaster component here */}
+     <Toaster /> 
     <Card className="w-full max-w-4xl shadow-lg rounded-lg overflow-hidden">
       <CardHeader className="bg-primary text-primary-foreground">
         <CardTitle className="text-2xl font-bold flex items-center">
@@ -752,12 +723,10 @@ export function InsulationResistanceAnalyzer() {
       <CardContent className="p-6 bg-secondary/30">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Test Details Section */}
             <Card className="bg-card shadow-md rounded-md">
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-lg text-primary">Detalles de la Prueba</CardTitle>
-                  {/* Clock removed from here */}
                 </div>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -805,11 +774,10 @@ export function InsulationResistanceAnalyzer() {
 
             <Separator className="bg-border my-4" />
 
-            {/* Resistance Readings Section */}
             <Card className="bg-card shadow-md rounded-md">
               <CardHeader>
                 <CardTitle className="text-lg text-primary">
-                  Lecturas de Resistencia de Aislamiento (G-OHM) {/* Changed unit here */}
+                  Lecturas de Resistencia de Aislamiento (G-OHM) 
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -825,7 +793,7 @@ export function InsulationResistanceAnalyzer() {
                           <Input
                              type="number"
                              step="any"
-                             placeholder="G-OHM" // Changed placeholder
+                             placeholder="G-OHM" 
                              {...field}
                              className={cn("rounded-md",fieldState.error && "border-destructive focus-visible:ring-destructive")}
                            />
@@ -836,16 +804,24 @@ export function InsulationResistanceAnalyzer() {
                   />
                 ))}
               </CardContent>
-                 <CardFooter className="text-xs text-muted-foreground pt-4 flex items-center justify-between"> {/* Added justify-between */}
-                     <div className="flex items-center"> {/* Wrapper for note */}
-                       <AlertCircle className="mr-1 h-3 w-3 text-muted-foreground/70" /> Introduce las lecturas en Gigaohmios (G-OHM). Introduce 0 si la lectura es 0. {/* Changed unit here */}
+                 <CardFooter className="text-xs text-muted-foreground pt-4 flex items-center justify-between"> 
+                     <div className="flex items-center"> 
+                       <AlertCircle className="mr-1 h-3 w-3 text-muted-foreground/70" /> Introduce las lecturas en Gigaohmios (G-OHM). Introduce 0 si la lectura es 0. 
                      </div>
-                    {currentTime && ( // Clock moved here
-                        <div className="text-2xl text-muted-foreground flex items-center">
-                          <CalendarClock className="mr-2 h-6 w-6" />
-                          <span>{currentTime}</span>
-                        </div>
-                    )}
+                     <Button
+                        variant="ghost"
+                        type="button" 
+                        onClick={handleStopwatchToggle}
+                        className="text-2xl text-muted-foreground p-0 h-auto flex items-center hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                        aria-label={isStopwatchRunning ? "Reiniciar cronómetro" : "Iniciar cronómetro"}
+                      >
+                        {isStopwatchRunning ? (
+                          <RefreshCcw className="mr-2 h-6 w-6" />
+                        ) : (
+                          <Play className="mr-2 h-6 w-6" />
+                        )}
+                        <span>{formatStopwatchTime(stopwatchTime)}</span>
+                      </Button>
                  </CardFooter>
             </Card>
 
@@ -856,7 +832,7 @@ export function InsulationResistanceAnalyzer() {
                <Button
                 type="button"
                 onClick={generatePDF}
-                disabled={!formDataForPdf || isLoadingPdf} // Disable if no data OR loading
+                disabled={!formDataForPdf || isLoadingPdf} 
                 variant="outline"
                 className="rounded-md border-primary text-primary hover:bg-primary/10"
                >
@@ -871,20 +847,17 @@ export function InsulationResistanceAnalyzer() {
           </form>
         </Form>
 
-        {/* Results Section - Conditionally Rendered */}
-        <div ref={resultsRef}> {/* Add ref here */}
+        <div ref={resultsRef}> 
          {showResults && (polarizationIndex !== null || dielectricAbsorptionRatio !== null) && (
           <>
             <Separator className="my-6 bg-border" />
             <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-               {/* Chart Card - Spanning 3 columns */}
-               <div className="md:col-span-3"> {/* Outer div for layout */}
+               <div className="md:col-span-3"> 
                   <Card className="bg-card shadow-md rounded-md h-full">
                       <CardHeader>
                          <CardTitle className="text-lg text-primary">Resistencia vs. Tiempo</CardTitle>
                       </CardHeader>
-                      {/* Move the ref to the direct parent of ResistanceChart for PDF capture */}
-                      <CardContent ref={innerChartRef} className="pr-6 pt-4 min-h-[320px]"> {/* Set min-height */}
+                      <CardContent ref={innerChartRef} className="pr-6 pt-4 min-h-[320px]"> 
                          {chartData.length > 0 ? (
                              <ResistanceChart data={chartData} />
                           ) : (
@@ -896,7 +869,6 @@ export function InsulationResistanceAnalyzer() {
                    </Card>
                 </div>
 
-               {/* Indices and Reference - Spanning 2 columns */}
                <div className="space-y-4 md:col-span-2">
                  <IndexResults
                    pi={polarizationIndex}
@@ -904,7 +876,6 @@ export function InsulationResistanceAnalyzer() {
                    getCondition={getCondition}
                  />
                  <IndexReferenceTable />
-                {/* Formula Notes Box - Added here for consistent layout */}
                 <Card className="bg-card shadow-md rounded-md">
                     <CardHeader>
                         <CardTitle className="text-lg text-primary">Cálculo de PI y DAR</CardTitle>
@@ -914,7 +885,6 @@ export function InsulationResistanceAnalyzer() {
                         <p><span className="font-semibold text-foreground">DAR:</span> Resistencia a 1 min / Resistencia a 30 seg.</p>
                     </CardContent>
                 </Card>
-                {/* Descriptive Notes Box - Added here for consistent layout */}
                 <Card className="bg-card shadow-md rounded-md">
                     <CardHeader>
                          <CardTitle className="text-lg text-primary">Notas</CardTitle>
