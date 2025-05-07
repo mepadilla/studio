@@ -810,7 +810,7 @@ export function InsulationResistanceAnalyzer() {
                           variant="ghost"
                           type="button"
                           onClick={handleStopwatchToggle}
-                          className="text-2xl text-muted-foreground p-0 h-auto flex items-center hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                          className="text-2xl text-destructive p-0 h-auto flex items-center hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
                           aria-label={isStopwatchRunning ? "Reiniciar cronómetro" : "Iniciar cronómetro"}
                         >
                           {isStopwatchRunning ? (
@@ -934,4 +934,3 @@ export function InsulationResistanceAnalyzer() {
    </>
   );
 }
-
