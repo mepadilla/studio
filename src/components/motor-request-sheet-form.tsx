@@ -47,7 +47,7 @@ const formSchema = z.object({
   rpm: z.string().min(1, "Las RPM son obligatorias"),
   frequency: z.string().min(1, "La frecuencia (Hz) es obligatoria"),
   voltage: z.string().min(1, "El voltaje es obligatorio"),
-  frameSize: z.string().min(1, "El tamaño de la carcasa es obligatorio"),
+  frameSize: z.string().optional(), // Made optional
   enclosureIP: z.string().optional(),
   serviceFactor: z.string().optional(),
   startingMethod: z.string().optional(),
@@ -224,7 +224,7 @@ export function MotorRequestSheetForm() {
     yPosCol1 = drawField('RPM', currentFormData.rpm, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
     yPosCol1 = drawField('Frecuencia (Hz)', currentFormData.frequency, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
     yPosCol1 = drawField('Voltaje', currentFormData.voltage, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
-    yPosCol1 = drawField('Tamaño de Carcasa', currentFormData.frameSize, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
+    yPosCol1 = drawField('Tamaño de Carcasa', currentFormData.frameSize, col1X, yPosCol1, colWidth, fieldLabelWidth, false); // Required set to false
     yPosCol1 = drawField('Encapsulado (IP)', currentFormData.enclosureIP, col1X, yPosCol1, colWidth, fieldLabelWidth);
     yPosCol1 = drawField('Factor de Servicio', currentFormData.serviceFactor, col1X, yPosCol1, colWidth, fieldLabelWidth);
     yPosCol1 = drawField('Método de Arranque', currentFormData.startingMethod, col1X, yPosCol1, colWidth, fieldLabelWidth);
@@ -474,7 +474,7 @@ export function MotorRequestSheetForm() {
                   <FormField control={form.control} name="rpm" render={({ field }) => ( <FormItem><FormLabel>RPM*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="frequency" render={({ field }) => ( <FormItem><FormLabel>Frecuencia (Hz)*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="voltage" render={({ field }) => ( <FormItem><FormLabel>Voltaje*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="frameSize" render={({ field }) => ( <FormItem><FormLabel>Tamaño de Carcasa*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="frameSize" render={({ field }) => ( <FormItem><FormLabel>Tamaño de Carcasa</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="enclosureIP" render={({ field }) => ( <FormItem><FormLabel>Encapsulado (IP)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="serviceFactor" render={({ field }) => ( <FormItem><FormLabel>Factor de Servicio</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="startingMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Arranque</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
@@ -623,3 +623,5 @@ export function MotorRequestSheetForm() {
     </>
   );
 }
+
+    
