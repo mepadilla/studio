@@ -33,7 +33,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { FileDown, FileText, Building, UploadCloud, Settings, Bolt, Zap, Thermometer, AlignHorizontalDistributeCenter, RotateCcw, ShieldAlert, HardHat, Link2, StickyNote, Replace } from 'lucide-react';
-import Image from 'next/image';
+// Removed Image import as it's no longer used
 
 const formSchema = z.object({
   countryOfDestination: z.string().optional(),
@@ -185,22 +185,11 @@ export function MotorRequestSheetForm() {
 
 
     // --- PDF Header ---
-    // Nidec Logo (Placeholder)
-    // In a real app, you'd load the actual image. For now, we'll draw a placeholder.
-    try {
-        // const nidecLogo = 'data:image/png;base64,...'; // Replace with actual base64 string or fetch
-        // doc.addImage(nidecLogo, 'PNG', margin, yPos, 100, 30);
-        doc.setFontSize(10);
-        doc.text("NIDEC MOTOR CORPORATION", margin, yPos +10 );
-    } catch (e) { console.error("Error adding Nidec logo", e); }
-    
-    // US Motors Logo (Placeholder)
-    try {
-        // const usMotorsLogo = 'data:image/png;base64,...'; // Replace with actual base64 string or fetch
-        // doc.addImage(usMotorsLogo, 'PNG', pageWidth - margin - 50, yPos, 40, 40);
-         doc.setFontSize(10);
-        doc.text("US MOTORS", pageWidth - margin - 70, yPos + 10);
-    } catch (e) { console.error("Error adding US Motors logo", e); }
+    // Logos removed from PDF generation
+    doc.setFontSize(10);
+    doc.text("NIDEC MOTOR CORPORATION", margin, yPos +10 );
+    doc.setFontSize(10);
+    doc.text("US MOTORS", pageWidth - margin - 70, yPos + 10);
 
     doc.setFontSize(16);
     doc.setFont(undefined, 'bold');
@@ -366,11 +355,13 @@ export function MotorRequestSheetForm() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               
-              {/* Logos - For UI display only */}
+              {/* Logos - Removed from UI */}
+              {/* 
               <div className="flex justify-between items-center mb-6">
                 <Image src="https://placehold.co/150x50.png" alt="Nidec Logo" width={150} height={50} data-ai-hint="Nidec logo" />
                 <Image src="https://placehold.co/70x70.png" alt="US Motors Logo" width={70} height={70} data-ai-hint="US Motors logo" />
               </div>
+              */}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 {/* Column 1 */}
