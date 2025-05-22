@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Link from 'next/link'; // Import Link for navigation
@@ -70,10 +71,26 @@ export default function RootLayout({
                                  {/* Link to the new Voltage Derating NEMA MG1 page */}
                                 <MenubarItem asChild>
                                   <Link href="/documentation/technical-standards/voltage-derating-nema-mg1" className="w-full">
-                                      Desbalance de Voltaje - NEMA MG1 {/* Updated Text */}
+                                      Desbalance de Voltaje - NEMA MG1
                                   </Link>
                                 </MenubarItem>
                                 {/* Add more technical standard links here */}
+                              </MenubarSubContent>
+                            </MenubarSub>
+                           {/* New "Tablas" sub-menu */}
+                            <MenubarSub>
+                              <MenubarSubTrigger>Tablas</MenubarSubTrigger>
+                              <MenubarSubContent>
+                                <MenubarItem disabled>Próximamente...</MenubarItem>
+                                {/* Add links to table documentation pages here */}
+                              </MenubarSubContent>
+                            </MenubarSub>
+                           {/* New "Formatos" sub-menu */}
+                            <MenubarSub>
+                              <MenubarSubTrigger>Formatos</MenubarSubTrigger>
+                              <MenubarSubContent>
+                                <MenubarItem disabled>Próximamente...</MenubarItem>
+                                {/* Add links to format documentation pages here */}
                               </MenubarSubContent>
                             </MenubarSub>
                            {/* Add more documentation links here */}
