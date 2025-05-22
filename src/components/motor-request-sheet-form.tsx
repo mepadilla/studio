@@ -190,13 +190,11 @@ export function MotorRequestSheetForm() {
 
     // --- PDF Header ---
     doc.setFontSize(10);
-    // doc.text("NIDEC MOTOR CORPORATION", margin, yPos +10 ); // Removed this line
-    doc.setFontSize(10);
     doc.text("US MOTORS", pageWidth - margin - 70, yPos + 10);
 
     doc.setFontSize(16);
     doc.setFont(undefined, 'bold');
-    doc.text('HOJA DE SOLICITUD DE MOTOR', pageWidth / 2, yPos + 25, { align: 'center' });
+    doc.text('FORMULARIO DE SOLICITUD DE MOTOR', pageWidth / 2, yPos + 25, { align: 'center' });
     yPos += 50;
 
     // --- Main Content (Two Columns) ---
@@ -341,7 +339,7 @@ export function MotorRequestSheetForm() {
     doc.setFont(undefined, 'italic');
     doc.text('*Campo obligatorio a rellenar', margin, pageHeight - margin / 2);
 
-    doc.save(`Hoja_Solicitud_Motor_${currentFormData.motorApplication.replace(/[^a-zA-Z0-9]/g, '_') || 'MOTOR'}.pdf`);
+    doc.save(`Formulario_Solicitud_Motor_${currentFormData.motorApplication.replace(/[^a-zA-Z0-9]/g, '_') || 'MOTOR'}.pdf`);
     toast({ title: "PDF Generado", description: "La solicitud se ha descargado exitosamente." });
     setIsLoadingPdf(false);
   };
@@ -657,4 +655,3 @@ export function MotorRequestSheetForm() {
   );
 }
     
-
