@@ -190,7 +190,7 @@ export function MotorRequestSheetForm() {
 
     // --- PDF Header ---
     doc.setFontSize(10);
-    doc.text("NIDEC MOTOR CORPORATION", margin, yPos +10 );
+    // doc.text("NIDEC MOTOR CORPORATION", margin, yPos +10 ); // Removed this line
     doc.setFontSize(10);
     doc.text("US MOTORS", pageWidth - margin - 70, yPos + 10);
 
