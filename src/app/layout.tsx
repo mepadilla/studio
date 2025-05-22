@@ -95,7 +95,7 @@ export default function RootLayout({
                                   <MenubarSubContent>
                                     <MenubarItem asChild>
                                       <Link href="/documentation/formats/electric-motors/request-sheet" className="w-full">
-                                        Solicitud Motor a Pedido
+                                        Forma Pedido de Motor
                                       </Link>
                                     </MenubarItem>
                                     {/* Add more links to motor format pages here */}
