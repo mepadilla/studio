@@ -190,7 +190,8 @@ export function MotorRequestSheetForm() {
 
     // --- PDF Header ---
     doc.setFontSize(10);
-    doc.text("US MOTORS", pageWidth - margin - 70, yPos + 10);
+    doc.text("US MOTORS", pageWidth - margin - doc.getTextWidth("US MOTORS") , yPos );
+
 
     doc.setFontSize(16);
     doc.setFont(undefined, 'bold');
@@ -242,7 +243,21 @@ export function MotorRequestSheetForm() {
     yPosCol2 = drawField('Clase de Aislamiento:', currentFormData.insulationClass, col2X, yPosCol2, colWidth, fieldLabelWidth);
     yPosCol2 = drawField('Ambiente °C:', currentFormData.ambientC, col2X, yPosCol2, colWidth, fieldLabelWidth);
     yPosCol2 = drawField('Posición de Montaje:', currentFormData.assemblyPosition, col2X, yPosCol2, colWidth, fieldLabelWidth);
-    yPosCol2 = drawField('Rotación (Visto desde Extremo Opuesto al Accionamiento):', currentFormData.rotation, col2X, yPosCol2, colWidth, fieldLabelWidth + 60);
+    
+    // Custom handling for 'Rotación' field
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'normal');
+    const rotationLabelText = "Rotación (Visto desde Extremo Opuesto al Accionamiento):";
+    const rotationLabelLines = doc.splitTextToSize(rotationLabelText, colWidth);
+    doc.text(rotationLabelLines, col2X, yPosCol2 + 8); // Draw label
+    yPosCol2 += rotationLabelLines.length * 10; // Advance Y based on number of label lines (approx 10pt per line for 8pt font)
+
+    // Draw the value field for 'Rotación' on the next line
+    doc.setFillColor(220, 255, 220); // Light green
+    doc.rect(col2X, yPosCol2, colWidth, 12, 'F'); // Value box spans full colWidth
+    doc.setFontSize(8);
+    doc.text(currentFormData.rotation || '', col2X + 3, yPosCol2 + 8);
+    yPosCol2 += 18; // Advance Y for the value field (standard field height)
     
     doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.text('A Prueba de Explosión/Peligroso', col2X, yPosCol2 + 8); yPosCol2 += 12;
     doc.setFontSize(7); doc.text('(Por favor, indique División, Clase, Grupo y Código de Temperatura)', col2X, yPosCol2 + 8); yPosCol2 += 12;
@@ -339,7 +354,7 @@ export function MotorRequestSheetForm() {
     doc.setFont(undefined, 'italic');
     doc.text('*Campo obligatorio a rellenar', margin, pageHeight - margin / 2);
 
-    doc.save(`Formulario_Solicitud_Motor_${currentFormData.motorApplication.replace(/[^a-zA-Z0-9]/g, '_') || 'MOTOR'}.pdf`);
+    doc.save(`Formulario_Solicitud_Motor_${(currentFormData.motorApplication || 'MOTOR').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
     toast({ title: "PDF Generado", description: "La solicitud se ha descargado exitosamente." });
     setIsLoadingPdf(false);
   };
@@ -365,161 +380,176 @@ export function MotorRequestSheetForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 {/* Column 1 */}
                 <div className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="finalClient"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center"><User className="mr-2 h-4 w-4 text-primary/80" />Cliente Final</FormLabel>
-                        <FormControl><Input {...field} placeholder="Nombre del cliente final" /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="salesPerson"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center"><Briefcase className="mr-2 h-4 w-4 text-primary/80" />Persona de Ventas Solicitante</FormLabel>
-                        <FormControl><Input {...field} placeholder="Nombre del vendedor" /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="countryOfDestination"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>País de Destino</FormLabel>
-                        <FormControl><Input {...field} placeholder="Ej.: EE. UU." /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="motorApplication"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Aplicación del Motor*</FormLabel>
-                        <FormControl><Input {...field} placeholder="Ej.: Bomba, Ventilador, Compresor" /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="mounting"
-                    render={({ field }) => (
-                      <FormItem className="space-y-3">
-                        <FormLabel>Montaje</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            className="flex flex-col space-y-1"
-                          >
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl><RadioGroupItem value="horizontal" /></FormControl>
-                              <FormLabel className="font-normal">Horizontal</FormLabel>
-                            </FormItem>
-                            {form.watch("mounting") === "horizontal" && (
-                              <div className="pl-6 space-y-2">
-                                <FormField control={form.control} name="cFlange" render={({ field: cField }) => (
-                                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                    <FormControl><Checkbox checked={cField.value} onCheckedChange={cField.onChange} /></FormControl>
-                                    <FormLabel className="font-normal">Brida C</FormLabel>
-                                  </FormItem>
-                                )}/>
-                                <FormField control={form.control} name="dFlange" render={({ field: dField }) => (
-                                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                    <FormControl><Checkbox checked={dField.value} onCheckedChange={dField.onChange} /></FormControl>
-                                    <FormLabel className="font-normal">Brida D</FormLabel>
-                                  </FormItem>
-                                )}/>
-                              </div>
-                            )}
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl><RadioGroupItem value="vertical" /></FormControl>
-                              <FormLabel className="font-normal">Vertical</FormLabel>
-                            </FormItem>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormItem>
-                    <FormLabel>Eficiencia</FormLabel>
-                    <FormField control={form.control} name="efficiency" render={() => (
-                        <>
-                        {[
-                            {id: "IE1", label: "Eficiencia Estándar (IE1)"},
-                            {id: "IE2", label: "Eficiencia Energética (IE2)"},
-                            {id: "IE3", label: "Eficiencia Premium (IE3)"},
-                        ].map((item) => (
-                            <FormField
-                            key={item.id}
-                            control={form.control}
-                            name="efficiency"
-                            render={({ field }) => {
-                                return (
-                                <FormItem
-                                    key={item.id}
-                                    className="flex flex-row items-start space-x-3 space-y-0"
-                                >
-                                    <FormControl>
-                                    <Checkbox
-                                        checked={field.value?.includes(item.id as "IE1" | "IE2" | "IE3")}
-                                        onCheckedChange={(checked) => {
-                                        return checked
-                                            ? field.onChange([...(field.value || []), item.id])
-                                            : field.onChange(
-                                                (field.value || []).filter(
-                                                (value) => value !== item.id
-                                                )
-                                            )
-                                        }}
-                                    />
-                                    </FormControl>
-                                    <FormLabel className="font-normal">
-                                    {item.label}
-                                    </FormLabel>
+                 <Card>
+                    <CardHeader><CardTitle className="text-base flex items-center"><Building className="mr-2 h-5 w-5 text-primary/80" />Datos de Solicitud</CardTitle></CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="finalClient"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center"><User className="mr-2 h-4 w-4 text-primary/70" />Cliente Final</FormLabel>
+                            <FormControl><Input {...field} placeholder="Nombre del cliente final" /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="salesPerson"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center"><Briefcase className="mr-2 h-4 w-4 text-primary/70" />Persona de Ventas Solicitante</FormLabel>
+                            <FormControl><Input {...field} placeholder="Nombre del vendedor" /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="countryOfDestination"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>País de Destino</FormLabel>
+                            <FormControl><Input {...field} placeholder="Ej.: EE. UU." /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+                 <Card>
+                    <CardHeader><CardTitle className="text-base flex items-center"><Settings className="mr-2 h-5 w-5 text-primary/80"/>Datos del Motor</CardTitle></CardHeader>
+                    <CardContent className="space-y-4">
+                       <FormField
+                        control={form.control}
+                        name="motorApplication"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Aplicación del Motor*</FormLabel>
+                            <FormControl><Input {...field} placeholder="Ej.: Bomba, Ventilador, Compresor" /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="mounting"
+                        render={({ field }) => (
+                          <FormItem className="space-y-3">
+                            <FormLabel className="flex items-center"><AlignHorizontalDistributeCenter className="mr-2 h-4 w-4 text-primary/70"/>Montaje</FormLabel>
+                            <FormControl>
+                              <RadioGroup
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                className="flex flex-col space-y-1"
+                              >
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                  <FormControl><RadioGroupItem value="horizontal" /></FormControl>
+                                  <FormLabel className="font-normal">Horizontal</FormLabel>
                                 </FormItem>
-                                )
-                            }}
-                            />
-                        ))}
-                        </>
-                    )}/>
-                    <FormMessage />
-                  </FormItem>
+                                {form.watch("mounting") === "horizontal" && (
+                                  <div className="pl-6 space-y-2">
+                                    <FormField control={form.control} name="cFlange" render={({ field: cField }) => (
+                                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                        <FormControl><Checkbox checked={cField.value} onCheckedChange={cField.onChange} /></FormControl>
+                                        <FormLabel className="font-normal">Brida C</FormLabel>
+                                      </FormItem>
+                                    )}/>
+                                    <FormField control={form.control} name="dFlange" render={({ field: dField }) => (
+                                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                        <FormControl><Checkbox checked={dField.value} onCheckedChange={dField.onChange} /></FormControl>
+                                        <FormLabel className="font-normal">Brida D</FormLabel>
+                                      </FormItem>
+                                    )}/>
+                                  </div>
+                                )}
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                  <FormControl><RadioGroupItem value="vertical" /></FormControl>
+                                  <FormLabel className="font-normal">Vertical</FormLabel>
+                                </FormItem>
+                              </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField control={form.control} name="designDownThrust" render={({ field }) => ( <FormItem><FormLabel>Empuje Descendente de Diseño (lbs)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="shutOffThrust" render={({ field }) => ( <FormItem><FormLabel>Empuje de Cierre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="horsepowerKW" render={({ field }) => ( <FormItem><FormLabel>Potencia (HP/KW)*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="rpm" render={({ field }) => ( <FormItem><FormLabel>RPM*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="frequency" render={({ field }) => ( <FormItem><FormLabel>Frecuencia (Hz)*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="voltage" render={({ field }) => ( <FormItem><FormLabel>Voltaje*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="frameSize" render={({ field }) => ( <FormItem><FormLabel>Tamaño de Carcasa - FRAME</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="enclosureIP" render={({ field }) => ( <FormItem><FormLabel>Encapsulado (IP)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="serviceFactor" render={({ field }) => ( <FormItem><FormLabel>Factor de Servicio</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="startingMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Arranque</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormItem>
+                        <FormLabel className="flex items-center"><Zap className="mr-2 h-4 w-4 text-primary/70"/>Eficiencia</FormLabel>
+                        <FormField control={form.control} name="efficiency" render={() => (
+                            <>
+                            {[
+                                {id: "IE1", label: "Eficiencia Estándar (IE1)"},
+                                {id: "IE2", label: "Eficiencia Energética (IE2)"},
+                                {id: "IE3", label: "Eficiencia Premium (IE3)"},
+                            ].map((item) => (
+                                <FormField
+                                key={item.id}
+                                control={form.control}
+                                name="efficiency"
+                                render={({ field }) => {
+                                    return (
+                                    <FormItem
+                                        key={item.id}
+                                        className="flex flex-row items-start space-x-3 space-y-0"
+                                    >
+                                        <FormControl>
+                                        <Checkbox
+                                            checked={field.value?.includes(item.id as "IE1" | "IE2" | "IE3")}
+                                            onCheckedChange={(checked) => {
+                                            return checked
+                                                ? field.onChange([...(field.value || []), item.id])
+                                                : field.onChange(
+                                                    (field.value || []).filter(
+                                                    (value) => value !== item.id
+                                                    )
+                                                )
+                                            }}
+                                        />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">
+                                        {item.label}
+                                        </FormLabel>
+                                    </FormItem>
+                                    )
+                                }}
+                                />
+                            ))}
+                            </>
+                        )}/>
+                        <FormMessage />
+                      </FormItem>
+
+                      <FormField control={form.control} name="designDownThrust" render={({ field }) => ( <FormItem><FormLabel>Empuje Descendente de Diseño (lbs)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="shutOffThrust" render={({ field }) => ( <FormItem><FormLabel>Empuje de Cierre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="horsepowerKW" render={({ field }) => ( <FormItem><FormLabel>Potencia (HP/KW)*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="rpm" render={({ field }) => ( <FormItem><FormLabel>RPM*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="frequency" render={({ field }) => ( <FormItem><FormLabel>Frecuencia (Hz)*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="voltage" render={({ field }) => ( <FormItem><FormLabel>Voltaje*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="frameSize" render={({ field }) => ( <FormItem><FormLabel>Tamaño de Carcasa - FRAME</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="enclosureIP" render={({ field }) => ( <FormItem><FormLabel>Encapsulado (IP)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="serviceFactor" render={({ field }) => ( <FormItem><FormLabel>Factor de Servicio</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="startingMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Arranque</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                    </CardContent>
+                  </Card>
                 </div>
 
                 {/* Column 2 */}
                 <div className="space-y-6">
-                  <FormField control={form.control} name="insulationClass" render={({ field }) => ( <FormItem><FormLabel>Clase de Aislamiento</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="ambientC" render={({ field }) => ( <FormItem><FormLabel>Ambiente °C</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="assemblyPosition" render={({ field }) => ( <FormItem><FormLabel>Posición de Montaje</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="rotation" render={({ field }) => ( <FormItem><FormLabel>Rotación (Visto desde el Extremo Opuesto al Accionamiento)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <Card>
+                    <CardHeader><CardTitle className="text-base flex items-center"><Thermometer className="mr-2 h-5 w-5 text-primary/80" />Más Datos del Motor</CardTitle></CardHeader>
+                     <CardContent className="space-y-4">
+                        <FormField control={form.control} name="insulationClass" render={({ field }) => ( <FormItem><FormLabel>Clase de Aislamiento</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="ambientC" render={({ field }) => ( <FormItem><FormLabel>Ambiente °C</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="assemblyPosition" render={({ field }) => ( <FormItem><FormLabel>Posición de Montaje</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="rotation" render={({ field }) => ( <FormItem><FormLabel className="flex items-center"><RotateCcw className="mr-2 h-4 w-4 text-primary/70"/>Rotación (Visto desde el Extremo Opuesto al Accionamiento)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                     </CardContent>
+                  </Card>
                   
                   <Card>
-                    <CardHeader><CardTitle className="text-base">A Prueba de Explosión/Peligroso</CardTitle><CardDescription className="text-xs">Por favor, indique División, Clase, Grupo y Código de Temperatura</CardDescription></CardHeader>
+                    <CardHeader><CardTitle className="text-base flex items-center"><ShieldAlert className="mr-2 h-5 w-5 text-primary/80"/>A Prueba de Explosión/Peligroso</CardTitle><CardDescription className="text-xs">Por favor, indique División, Clase, Grupo y Código de Temperatura</CardDescription></CardHeader>
                     <CardContent className="space-y-4">
                       <FormField control={form.control} name="hazardousProof" render={({ field }) => ( <FormItem><FormLabel>¿A prueba de explosión?</FormLabel><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Sí</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="no" /></FormControl><FormLabel className="font-normal">No</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="hazardousListed" render={({ field }) => ( <FormItem><FormLabel>¿Listado?</FormLabel><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="listed" /></FormControl><FormLabel className="font-normal">Listado</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="non-listed" /></FormControl><FormLabel className="font-normal">No Listado</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
@@ -559,11 +589,11 @@ export function MotorRequestSheetForm() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <Card>
-                  <CardHeader><CardTitle className="text-base">Servicio con Inversor</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-base flex items-center"><HardHat className="mr-2 h-5 w-5 text-primary/80"/>Servicio con Inversor</CardTitle></CardHeader>
                   <CardContent className="space-y-4">
                     <FormField control={form.control} name="inverterDuty" render={({ field }) => ( <FormItem><FormLabel>¿Para servicio con inversor?</FormLabel><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Sí</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="no" /></FormControl><FormLabel className="font-normal">No</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
                     {form.watch("inverterDuty") === "yes" && (
-                        <Card className="p-4">
+                        <Card className="p-4 bg-secondary/50">
                             <CardHeader><CardTitle className="text-sm">Rango de Velocidad</CardTitle></CardHeader>
                             <CardContent className="space-y-3">
                                 <FormField control={form.control} name="variableTorqueValue" render={({ field }) => ( <FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Valor de Torque Variable</FormLabel><FormControl><Input {...form.register("variableTorqueSpeedRange")} placeholder="Rango de Velocidad" className="ml-2 h-8 text-xs" /></FormControl></FormItem>)}/>
@@ -576,7 +606,7 @@ export function MotorRequestSheetForm() {
                 </Card>
 
                 <Card>
-                  <CardHeader><CardTitle className="text-base">Conexión a la Carga</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-base flex items-center"><Link2 className="mr-2 h-5 w-5 text-primary/80"/>Conexión a la Carga</CardTitle></CardHeader>
                   <CardContent className="space-y-3">
                     <FormField control={form.control} name="directConnected" render={({ field }) => ( <FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Conectado Directamente a la Carga</FormLabel></FormItem>)}/>
                     <FormField control={form.control} name="beltedConnection" render={({ field }) => ( <FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Conexión por Correa a la Carga</FormLabel></FormItem>)}/>
@@ -596,7 +626,7 @@ export function MotorRequestSheetForm() {
                 name="additionalNotes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Notas Adicionales o Características Especiales</FormLabel>
+                    <FormLabel className="flex items-center"><StickyNote className="mr-2 h-5 w-5 text-primary/80"/>Notas Adicionales o Características Especiales</FormLabel>
                     <FormControl><Textarea {...field} placeholder="Ingrese cualquier nota adicional o característica especial..." rows={4}/></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -606,7 +636,7 @@ export function MotorRequestSheetForm() {
               <Separator />
 
               <Card>
-                <CardHeader><CardTitle className="text-base">Motor de Reemplazo</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-base flex items-center"><Replace className="mr-2 h-5 w-5 text-primary/80"/>Motor de Reemplazo</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="replacementBrandName" render={({ field }) => ( <FormItem><FormLabel>Marca:</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)}/>
                     <FormField control={form.control} name="replacementCatalogModelID" render={({ field }) => ( <FormItem><FormLabel>Catálogo/Modelo/ID#:</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)}/>
@@ -620,7 +650,7 @@ export function MotorRequestSheetForm() {
                     Limpiar Formulario
                 </Button>
                 <Button type="submit" variant="secondary" className="bg-blue-600 hover:bg-blue-700 text-white">
-                    <StickyNote className="mr-2 h-4 w-4" /> Guardar Datos para PDF
+                    <UploadCloud className="mr-2 h-4 w-4" /> Guardar Datos para PDF
                 </Button>
                 <Button
                     type="button"
@@ -654,4 +684,6 @@ export function MotorRequestSheetForm() {
     </>
   );
 }
+    
+
     
