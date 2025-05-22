@@ -32,9 +32,11 @@ import { Separator } from '@/components/ui/separator';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { FileDown, FileText, Building, UploadCloud, Settings, Bolt, Zap, Thermometer, AlignHorizontalDistributeCenter, RotateCcw, ShieldAlert, HardHat, Link2, StickyNote, Replace } from 'lucide-react';
+import { FileDown, FileText, Building, UploadCloud, Settings, Bolt, Zap, Thermometer, AlignHorizontalDistributeCenter, RotateCcw, ShieldAlert, HardHat, Link2, StickyNote, Replace, User, Briefcase } from 'lucide-react';
 
 const formSchema = z.object({
+  finalClient: z.string().optional(),
+  salesPerson: z.string().optional(),
   countryOfDestination: z.string().optional(),
   motorApplication: z.string().min(1, "La aplicación del motor es obligatoria"),
   mounting: z.enum(["horizontal", "vertical"]).optional(),
@@ -47,7 +49,7 @@ const formSchema = z.object({
   rpm: z.string().min(1, "Las RPM son obligatorias"),
   frequency: z.string().min(1, "La frecuencia (Hz) es obligatoria"),
   voltage: z.string().min(1, "El voltaje es obligatorio"),
-  frameSize: z.string().optional(), // Made optional
+  frameSize: z.string().optional(),
   enclosureIP: z.string().optional(),
   serviceFactor: z.string().optional(),
   startingMethod: z.string().optional(),
@@ -96,12 +98,14 @@ export function MotorRequestSheetForm() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      finalClient: '',
+      salesPerson: '',
       motorApplication: '',
       horsepowerKW: '',
       rpm: '',
       frequency: '',
       voltage: '',
-      frameSize: '', // Ya era opcional, así que el valor por defecto es correcto
+      frameSize: '',
       efficiency: [],
       // Initialize other fields as needed
     },
@@ -204,7 +208,13 @@ export function MotorRequestSheetForm() {
     let yPosCol2 = yPos;
 
     // Column 1
+    yPosCol1 = drawSectionTitle('Datos de Solicitud:', yPosCol1, 9, true);
+    yPosCol1 = drawField('Cliente Final:', currentFormData.finalClient, col1X, yPosCol1, colWidth, fieldLabelWidth);
+    yPosCol1 = drawField('Persona de Ventas:', currentFormData.salesPerson, col1X, yPosCol1, colWidth, fieldLabelWidth);
     yPosCol1 = drawField('País de Destino:', currentFormData.countryOfDestination, col1X, yPosCol1, colWidth, fieldLabelWidth);
+    yPosCol1 += 6; // Extra space before next section
+
+    yPosCol1 = drawSectionTitle('Datos del Motor:', yPosCol1, 9, true);
     yPosCol1 = drawField('Aplicación del Motor:', currentFormData.motorApplication, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
     
     doc.setFontSize(8); doc.text('Montaje:', col1X, yPosCol1 + 8); yPosCol1 += 12;
@@ -356,6 +366,28 @@ export function MotorRequestSheetForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 {/* Column 1 */}
                 <div className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="finalClient"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center"><User className="mr-2 h-4 w-4 text-primary/80" />Cliente Final</FormLabel>
+                        <FormControl><Input {...field} placeholder="Nombre del cliente final" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="salesPerson"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center"><Briefcase className="mr-2 h-4 w-4 text-primary/80" />Persona de Ventas Solicitante</FormLabel>
+                        <FormControl><Input {...field} placeholder="Nombre del vendedor" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="countryOfDestination"
@@ -623,5 +655,4 @@ export function MotorRequestSheetForm() {
     </>
   );
 }
-
     
