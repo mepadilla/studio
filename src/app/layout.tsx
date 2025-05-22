@@ -85,12 +85,26 @@ export default function RootLayout({
                                 {/* Add links to table documentation pages here */}
                               </MenubarSubContent>
                             </MenubarSub>
-                           {/* New "Formatos" sub-menu */}
+                           {/* New "Formatos" sub-menu, which is now a sub-trigger */}
                             <MenubarSub>
                               <MenubarSubTrigger>Formatos</MenubarSubTrigger>
                               <MenubarSubContent>
-                                <MenubarItem disabled>Próximamente...</MenubarItem>
-                                {/* Add links to format documentation pages here */}
+                                {/* Sub-menu for "Motores Eléctricos" */}
+                                <MenubarSub>
+                                  <MenubarSubTrigger>Motores Eléctricos</MenubarSubTrigger>
+                                  <MenubarSubContent>
+                                    <MenubarItem disabled>Próximamente...</MenubarItem>
+                                    {/* Add links to motor format pages here */}
+                                  </MenubarSubContent>
+                                </MenubarSub>
+                                {/* Sub-menu for "Bombas" */}
+                                <MenubarSub>
+                                  <MenubarSubTrigger>Bombas</MenubarSubTrigger>
+                                  <MenubarSubContent>
+                                    <MenubarItem disabled>Próximamente...</MenubarItem>
+                                    {/* Add links to pump format pages here */}
+                                  </MenubarSubContent>
+                                </MenubarSub>
                               </MenubarSubContent>
                             </MenubarSub>
                            {/* Add more documentation links here */}
