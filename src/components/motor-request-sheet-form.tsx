@@ -33,22 +33,21 @@ import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { FileDown, FileText, Building, UploadCloud, Settings, Bolt, Zap, Thermometer, AlignHorizontalDistributeCenter, RotateCcw, ShieldAlert, HardHat, Link2, StickyNote, Replace } from 'lucide-react';
-// Removed Image import as it's no longer used
 
 const formSchema = z.object({
   countryOfDestination: z.string().optional(),
-  motorApplication: z.string().min(1, "Motor Application is required"),
+  motorApplication: z.string().min(1, "La aplicación del motor es obligatoria"),
   mounting: z.enum(["horizontal", "vertical"]).optional(),
   cFlange: z.boolean().optional(),
   dFlange: z.boolean().optional(),
   efficiency: z.array(z.enum(["IE1", "IE2", "IE3"])).optional(),
   designDownThrust: z.string().optional(),
   shutOffThrust: z.string().optional(),
-  horsepowerKW: z.string().min(1, "Horsepower/KW is required"),
-  rpm: z.string().min(1, "RPM is required"),
-  frequency: z.string().min(1, "Frequency (Hz) is required"),
-  voltage: z.string().min(1, "Voltage is required"),
-  frameSize: z.string().min(1, "Frame Size is required"),
+  horsepowerKW: z.string().min(1, "La potencia (HP/KW) es obligatoria"),
+  rpm: z.string().min(1, "Las RPM son obligatorias"),
+  frequency: z.string().min(1, "La frecuencia (Hz) es obligatoria"),
+  voltage: z.string().min(1, "El voltaje es obligatorio"),
+  frameSize: z.string().min(1, "El tamaño de la carcasa es obligatorio"),
   enclosureIP: z.string().optional(),
   serviceFactor: z.string().optional(),
   startingMethod: z.string().optional(),
@@ -109,7 +108,7 @@ export function MotorRequestSheetForm() {
   });
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
-    console.log('Form Submitted:', data);
+    console.log('Formulario Guardado:', data);
     setCurrentFormData(data);
     toast({
       title: "Formulario Guardado",
@@ -185,7 +184,6 @@ export function MotorRequestSheetForm() {
 
 
     // --- PDF Header ---
-    // Logos removed from PDF generation
     doc.setFontSize(10);
     doc.text("NIDEC MOTOR CORPORATION", margin, yPos +10 );
     doc.setFontSize(10);
@@ -193,7 +191,7 @@ export function MotorRequestSheetForm() {
 
     doc.setFontSize(16);
     doc.setFont(undefined, 'bold');
-    doc.text('ENGINEERED TO ORDER MOTOR REQUEST SHEET', pageWidth / 2, yPos + 25, { align: 'center' });
+    doc.text('HOJA DE SOLICITUD DE MOTOR DISEÑADO A MEDIDA', pageWidth / 2, yPos + 25, { align: 'center' });
     yPos += 50;
 
     // --- Main Content (Two Columns) ---
@@ -206,65 +204,65 @@ export function MotorRequestSheetForm() {
     let yPosCol2 = yPos;
 
     // Column 1
-    yPosCol1 = drawField('Country of Destination', currentFormData.countryOfDestination, col1X, yPosCol1, colWidth, fieldLabelWidth);
-    yPosCol1 = drawField('Motor Application', currentFormData.motorApplication, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
+    yPosCol1 = drawField('País de Destino', currentFormData.countryOfDestination, col1X, yPosCol1, colWidth, fieldLabelWidth);
+    yPosCol1 = drawField('Aplicación del Motor', currentFormData.motorApplication, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
     
-    doc.setFontSize(8); doc.text('Mounting:', col1X, yPosCol1 + 8); yPosCol1 += 12;
+    doc.setFontSize(8); doc.text('Montaje:', col1X, yPosCol1 + 8); yPosCol1 += 12;
     drawRadio('Horizontal', currentFormData.mounting === 'horizontal', col1X + 10, yPosCol1); yPosCol1 += 12;
-    drawCheckbox('C Flange', currentFormData.cFlange, col1X + 25, yPosCol1); yPosCol1 += 12;
-    drawCheckbox('D Flange', currentFormData.dFlange, col1X + 25, yPosCol1); yPosCol1 += 12;
+    drawCheckbox('Brida C', currentFormData.cFlange, col1X + 25, yPosCol1); yPosCol1 += 12;
+    drawCheckbox('Brida D', currentFormData.dFlange, col1X + 25, yPosCol1); yPosCol1 += 12;
     drawRadio('Vertical', currentFormData.mounting === 'vertical', col1X + 10, yPosCol1); yPosCol1 += 18;
 
-    doc.setFontSize(8); doc.text('Efficiency:', col1X, yPosCol1 + 8); yPosCol1 += 12;
-    drawCheckbox('Standard Efficient (IE1)', currentFormData.efficiency?.includes("IE1"), col1X + 10, yPosCol1); yPosCol1 += 12;
-    drawCheckbox('Energy Efficient (IE2)', currentFormData.efficiency?.includes("IE2"), col1X + 10, yPosCol1); yPosCol1 += 12;
-    drawCheckbox('Premium Efficient (IE3)', currentFormData.efficiency?.includes("IE3"), col1X + 10, yPosCol1); yPosCol1 += 18;
+    doc.setFontSize(8); doc.text('Eficiencia:', col1X, yPosCol1 + 8); yPosCol1 += 12;
+    drawCheckbox('Eficiencia Estándar (IE1)', currentFormData.efficiency?.includes("IE1"), col1X + 10, yPosCol1); yPosCol1 += 12;
+    drawCheckbox('Eficiencia Energética (IE2)', currentFormData.efficiency?.includes("IE2"), col1X + 10, yPosCol1); yPosCol1 += 12;
+    drawCheckbox('Eficiencia Premium (IE3)', currentFormData.efficiency?.includes("IE3"), col1X + 10, yPosCol1); yPosCol1 += 18;
     
-    yPosCol1 = drawField('Design Down Thrust (lbs)', currentFormData.designDownThrust, col1X, yPosCol1, colWidth, fieldLabelWidth);
-    yPosCol1 = drawField('Shut off Thrust', currentFormData.shutOffThrust, col1X, yPosCol1, colWidth, fieldLabelWidth);
-    yPosCol1 = drawField('Horsepower/KW', currentFormData.horsepowerKW, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
+    yPosCol1 = drawField('Empuje Descendente de Diseño (lbs)', currentFormData.designDownThrust, col1X, yPosCol1, colWidth, fieldLabelWidth);
+    yPosCol1 = drawField('Empuje de Cierre', currentFormData.shutOffThrust, col1X, yPosCol1, colWidth, fieldLabelWidth);
+    yPosCol1 = drawField('Potencia (HP/KW)', currentFormData.horsepowerKW, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
     yPosCol1 = drawField('RPM', currentFormData.rpm, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
-    yPosCol1 = drawField('Frequency (Hz)', currentFormData.frequency, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
-    yPosCol1 = drawField('Voltage', currentFormData.voltage, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
-    yPosCol1 = drawField('Frame Size', currentFormData.frameSize, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
-    yPosCol1 = drawField('Enclosure (IP)', currentFormData.enclosureIP, col1X, yPosCol1, colWidth, fieldLabelWidth);
-    yPosCol1 = drawField('Service Factor', currentFormData.serviceFactor, col1X, yPosCol1, colWidth, fieldLabelWidth);
-    yPosCol1 = drawField('Starting Method', currentFormData.startingMethod, col1X, yPosCol1, colWidth, fieldLabelWidth);
+    yPosCol1 = drawField('Frecuencia (Hz)', currentFormData.frequency, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
+    yPosCol1 = drawField('Voltaje', currentFormData.voltage, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
+    yPosCol1 = drawField('Tamaño de Carcasa', currentFormData.frameSize, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
+    yPosCol1 = drawField('Encapsulado (IP)', currentFormData.enclosureIP, col1X, yPosCol1, colWidth, fieldLabelWidth);
+    yPosCol1 = drawField('Factor de Servicio', currentFormData.serviceFactor, col1X, yPosCol1, colWidth, fieldLabelWidth);
+    yPosCol1 = drawField('Método de Arranque', currentFormData.startingMethod, col1X, yPosCol1, colWidth, fieldLabelWidth);
 
     // Column 2
-    yPosCol2 = drawField('Insulation Class', currentFormData.insulationClass, col2X, yPosCol2, colWidth, fieldLabelWidth);
-    yPosCol2 = drawField('Ambient °C', currentFormData.ambientC, col2X, yPosCol2, colWidth, fieldLabelWidth);
-    yPosCol2 = drawField('Assembly Position', currentFormData.assemblyPosition, col2X, yPosCol2, colWidth, fieldLabelWidth);
-    yPosCol2 = drawField('Rotation (Facing Opposite Drive End)', currentFormData.rotation, col2X, yPosCol2, colWidth, fieldLabelWidth);
+    yPosCol2 = drawField('Clase de Aislamiento', currentFormData.insulationClass, col2X, yPosCol2, colWidth, fieldLabelWidth);
+    yPosCol2 = drawField('Ambiente °C', currentFormData.ambientC, col2X, yPosCol2, colWidth, fieldLabelWidth);
+    yPosCol2 = drawField('Posición de Montaje', currentFormData.assemblyPosition, col2X, yPosCol2, colWidth, fieldLabelWidth);
+    yPosCol2 = drawField('Rotación (Visto desde el Extremo Opuesto al Accionamiento)', currentFormData.rotation, col2X, yPosCol2, colWidth, fieldLabelWidth);
     
-    doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.text('Hazardous/Explosion Proof', col2X, yPosCol2 + 8); yPosCol2 += 12;
-    doc.setFontSize(7); doc.text('(Please indicate Division, Class, Group and Temp Code)', col2X, yPosCol2 + 8); yPosCol2 += 12;
+    doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.text('A Prueba de Explosión/Peligroso', col2X, yPosCol2 + 8); yPosCol2 += 12;
+    doc.setFontSize(7); doc.text('(Por favor, indique División, Clase, Grupo y Código de Temperatura)', col2X, yPosCol2 + 8); yPosCol2 += 12;
     
-    drawRadio('Yes', currentFormData.hazardousProof === 'yes', col2X + 10, yPosCol2);
+    drawRadio('Sí', currentFormData.hazardousProof === 'yes', col2X + 10, yPosCol2);
     drawRadio('No', currentFormData.hazardousProof === 'no', col2X + 70, yPosCol2); yPosCol2 += 12;
-    drawRadio('Listed', currentFormData.hazardousListed === 'listed', col2X + 10, yPosCol2);
-    drawRadio('Non-Listed', currentFormData.hazardousListed === 'non-listed', col2X + 70, yPosCol2); yPosCol2 += 12;
-    drawRadio('Self Certified', currentFormData.hazardousCertified === 'self-certified', col2X + 10, yPosCol2);
-    drawRadio('CSA Certified', currentFormData.hazardousCertified === 'csa-certified', col2X + 100, yPosCol2); yPosCol2 += 18;
+    drawRadio('Listado', currentFormData.hazardousListed === 'listed', col2X + 10, yPosCol2);
+    drawRadio('No Listado', currentFormData.hazardousListed === 'non-listed', col2X + 70, yPosCol2); yPosCol2 += 12;
+    drawRadio('Autocertificado', currentFormData.hazardousCertified === 'self-certified', col2X + 10, yPosCol2);
+    drawRadio('Certificado CSA', currentFormData.hazardousCertified === 'csa-certified', col2X + 100, yPosCol2); yPosCol2 += 18;
 
-    drawRadio('Division 1', currentFormData.hazardousDivision === 'division1', col2X + 10, yPosCol2);
-    drawRadio('Division 2', currentFormData.hazardousDivision === 'division2', col2X + colWidth / 2, yPosCol2); yPosCol2 += 12;
+    drawRadio('División 1', currentFormData.hazardousDivision === 'division1', col2X + 10, yPosCol2);
+    drawRadio('División 2', currentFormData.hazardousDivision === 'division2', col2X + colWidth / 2, yPosCol2); yPosCol2 += 12;
     
-    drawRadio('Class I', currentFormData.hazardousClass === 'classI', col2X + 10, yPosCol2);
-    doc.text('Group', col2X + 20, yPosCol2 + 10); yPosCol2 += 12;
+    drawRadio('Clase I', currentFormData.hazardousClass === 'classI', col2X + 10, yPosCol2);
+    doc.text('Grupo', col2X + 20, yPosCol2 + 10); yPosCol2 += 12;
     drawCheckbox('A', currentFormData.hazardousGroupA, col2X + 25, yPosCol2);
     drawCheckbox('B', currentFormData.hazardousGroupB, col2X + 55, yPosCol2); yPosCol2 += 12;
     drawCheckbox('C', currentFormData.hazardousGroupC, col2X + 25, yPosCol2);
     drawCheckbox('D', currentFormData.hazardousGroupD, col2X + 55, yPosCol2); yPosCol2 += 12;
 
-    drawRadio('Class II', currentFormData.hazardousClass === 'classII', col2X + colWidth / 2, yPosCol2 - 24); // Align with Class I
-    doc.text('Group', col2X + colWidth/2 + 10, yPosCol2 + 10 -12); yPosCol2 += 12;
+    drawRadio('Clase II', currentFormData.hazardousClass === 'classII', col2X + colWidth / 2, yPosCol2 - 24); // Align with Class I
+    doc.text('Grupo', col2X + colWidth/2 + 10, yPosCol2 + 10 -12); yPosCol2 += 12;
     drawCheckbox('E', currentFormData.hazardousGroupE, col2X + colWidth / 2 + 15, yPosCol2 -24);
     drawCheckbox('F', currentFormData.hazardousGroupF, col2X + colWidth / 2 + 45, yPosCol2-24); yPosCol2 += 12;
     drawCheckbox('G', currentFormData.hazardousGroupG, col2X + colWidth / 2 + 15, yPosCol2-24);
     
     yPosCol2 += 12; // Space before Temp Code
-    yPosCol2 = drawField('Temperature Code', currentFormData.temperatureCode, col2X, yPosCol2, colWidth, fieldLabelWidth -30); // Shorter label width for this one
+    yPosCol2 = drawField('Código de Temperatura', currentFormData.temperatureCode, col2X, yPosCol2, colWidth, fieldLabelWidth -30); // Shorter label width for this one
 
     // Align yPos for next sections
     yPos = Math.max(yPosCol1, yPosCol2) + 10;
@@ -272,45 +270,45 @@ export function MotorRequestSheetForm() {
     // --- Inverter Duty Section ---
     doc.rect(margin, yPos, contentWidth, 70, 'S'); // Box for Inverter Duty
     yPos += 5;
-    doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.text('Inverter Duty', margin + 5, yPos + 8);
-    drawRadio('Yes', currentFormData.inverterDuty === 'yes', margin + 100, yPos);
+    doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.text('Servicio con Inversor', margin + 5, yPos + 8);
+    drawRadio('Sí', currentFormData.inverterDuty === 'yes', margin + 100, yPos);
     drawRadio('No', currentFormData.inverterDuty === 'no', margin + 150, yPos);
     yPos += 18;
 
     doc.setFontSize(8); doc.setFont(undefined, 'normal');
-    doc.text('Speed Range', margin + colWidth/2 - 50, yPos + 8, {align: 'center'});
+    doc.text('Rango de Velocidad', margin + colWidth/2 - 50, yPos + 8, {align: 'center'});
     yPos += 12;
 
-    drawCheckbox('Variable Torque Value', currentFormData.variableTorqueValue, margin + 10, yPos);
+    drawCheckbox('Valor de Torque Variable', currentFormData.variableTorqueValue, margin + 10, yPos);
     yPos = drawField('', currentFormData.variableTorqueSpeedRange, margin + 150, yPos - 12, colWidth/2 - 20 , 0) + 0 ; // Value next to it
     
-    drawCheckbox('Constant Torque Value', currentFormData.constantTorqueValue, margin + 10, yPos);
+    drawCheckbox('Valor de Torque Constante', currentFormData.constantTorqueValue, margin + 10, yPos);
     yPos = drawField('', currentFormData.constantTorqueSpeedRange, margin + 150, yPos - 12, colWidth/2 - 20, 0) + 0;
    
-    drawCheckbox('Constant HP', currentFormData.constantHP, margin + 10, yPos);
+    drawCheckbox('HP Constante', currentFormData.constantHP, margin + 10, yPos);
     yPos += 25; // End of Inverter Duty box content
 
     // --- Connection to Load Section (aligned with Inverter Duty on the right) ---
     let yPosConnect = yPos - 70 + 5; // Align to top of inverter duty box
     const connectX = col2X;
 
-    doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.text('Connection to Load', connectX, yPosConnect + 8); yPosConnect += 18;
+    doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.text('Conexión a la Carga', connectX, yPosConnect + 8); yPosConnect += 18;
     doc.setFontSize(8); doc.setFont(undefined, 'normal');
     
-    drawCheckbox('Direct Connected to Load', currentFormData.directConnected, connectX + 5, yPosConnect); yPosConnect += 12;
-    drawCheckbox('Belted Connection To Load', currentFormData.beltedConnection, connectX + 5, yPosConnect); yPosConnect += 12;
+    drawCheckbox('Conectado Directamente a la Carga', currentFormData.directConnected, connectX + 5, yPosConnect); yPosConnect += 12;
+    drawCheckbox('Conexión por Correa a la Carga', currentFormData.beltedConnection, connectX + 5, yPosConnect); yPosConnect += 12;
     
-    yPosConnect = drawField('Drive Sheave Outer Diameter', currentFormData.driveSheaveOuterDiameter, connectX, yPosConnect, colWidth, fieldLabelWidth + 20);
-    yPosConnect = drawField('Driven Sheave Outer Diameter', currentFormData.drivenSheaveOuterDiameter, connectX, yPosConnect, colWidth, fieldLabelWidth + 20);
-    yPosConnect = drawField('Sheave Center Diameter', currentFormData.sheaveCenterDiameter, connectX, yPosConnect, colWidth, fieldLabelWidth + 20);
-    yPosConnect = drawField('Belt Type', currentFormData.beltType, connectX, yPosConnect, colWidth, fieldLabelWidth);
-    yPosConnect = drawField('No. of belts', currentFormData.noOfBelts, connectX, yPosConnect, colWidth, fieldLabelWidth);
+    yPosConnect = drawField('Diámetro Exterior de la Polea Motriz', currentFormData.driveSheaveOuterDiameter, connectX, yPosConnect, colWidth, fieldLabelWidth + 20);
+    yPosConnect = drawField('Diámetro Exterior de la Polea Conducida', currentFormData.drivenSheaveOuterDiameter, connectX, yPosConnect, colWidth, fieldLabelWidth + 20);
+    yPosConnect = drawField('Diámetro Central de la Polea', currentFormData.sheaveCenterDiameter, connectX, yPosConnect, colWidth, fieldLabelWidth + 20);
+    yPosConnect = drawField('Tipo de Correa', currentFormData.beltType, connectX, yPosConnect, colWidth, fieldLabelWidth);
+    yPosConnect = drawField('Nº de Correas', currentFormData.noOfBelts, connectX, yPosConnect, colWidth, fieldLabelWidth);
     
     yPos = Math.max(yPos, yPosConnect) + 10;
 
 
     // --- Additional Notes ---
-    yPos = drawSectionTitle('Additional Notes or Special Features', yPos);
+    yPos = drawSectionTitle('Notas Adicionales o Características Especiales', yPos);
     doc.setFillColor(220, 255, 220); // Light green
     doc.rect(margin, yPos, contentWidth, 40, 'F');
     doc.setFontSize(8);
@@ -319,20 +317,20 @@ export function MotorRequestSheetForm() {
     yPos += 50;
 
     // --- Replacement Motor ---
-    yPos = drawSectionTitle('REPLACEMENT MOTOR', yPos, 10, true);
+    yPos = drawSectionTitle('MOTOR DE REEMPLAZO', yPos, 10, true);
     doc.rect(margin, yPos, contentWidth, 40, 'S'); // Box for replacement
     yPos += 5;
-    yPos = drawField('Brand Name:', currentFormData.replacementBrandName, margin + 5, yPos, contentWidth -10, fieldLabelWidth-30);
-    yPos = drawField('Catalog/Model/ID#', currentFormData.replacementCatalogModelID, margin + 5, yPos, contentWidth -10, fieldLabelWidth-30);
+    yPos = drawField('Marca:', currentFormData.replacementBrandName, margin + 5, yPos, contentWidth -10, fieldLabelWidth-30);
+    yPos = drawField('Catálogo/Modelo/ID#', currentFormData.replacementCatalogModelID, margin + 5, yPos, contentWidth -10, fieldLabelWidth-30);
     yPos += 20;
 
 
     // --- Footer ---
     doc.setFontSize(8);
     doc.setFont(undefined, 'italic');
-    doc.text('*Required field to fill in', margin, pageHeight - margin / 2);
+    doc.text('*Campo obligatorio a rellenar', margin, pageHeight - margin / 2);
 
-    doc.save(`Motor_Request_Sheet_${currentFormData.motorApplication.replace(/[^a-zA-Z0-9]/g, '_') || 'MOTOR'}.pdf`);
+    doc.save(`Hoja_Solicitud_Motor_${currentFormData.motorApplication.replace(/[^a-zA-Z0-9]/g, '_') || 'MOTOR'}.pdf`);
     toast({ title: "PDF Generado", description: "La solicitud se ha descargado exitosamente." });
     setIsLoadingPdf(false);
   };
@@ -345,7 +343,7 @@ export function MotorRequestSheetForm() {
         <CardHeader className="bg-primary text-primary-foreground p-6">
           <div className="flex items-center space-x-3">
             <FileText className="h-8 w-8" />
-            <CardTitle className="text-2xl font-bold">Engineered to Order Motor Request Sheet</CardTitle>
+            <CardTitle className="text-2xl font-bold">Hoja de solicitud de motor diseñado a medida</CardTitle>
           </div>
           <CardDescription className="text-primary-foreground/90 mt-2">
             Complete el siguiente formulario para solicitar un motor diseñado a pedido. Los campos marcados con (*) son obligatorios.
@@ -355,14 +353,6 @@ export function MotorRequestSheetForm() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               
-              {/* Logos - Removed from UI */}
-              {/* 
-              <div className="flex justify-between items-center mb-6">
-                <Image src="https://placehold.co/150x50.png" alt="Nidec Logo" width={150} height={50} data-ai-hint="Nidec logo" />
-                <Image src="https://placehold.co/70x70.png" alt="US Motors Logo" width={70} height={70} data-ai-hint="US Motors logo" />
-              </div>
-              */}
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 {/* Column 1 */}
                 <div className="space-y-6">
@@ -371,8 +361,8 @@ export function MotorRequestSheetForm() {
                     name="countryOfDestination"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Country of Destination</FormLabel>
-                        <FormControl><Input {...field} placeholder="e.g., USA" /></FormControl>
+                        <FormLabel>País de Destino</FormLabel>
+                        <FormControl><Input {...field} placeholder="Ej.: EE. UU." /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -382,8 +372,8 @@ export function MotorRequestSheetForm() {
                     name="motorApplication"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Motor Application*</FormLabel>
-                        <FormControl><Input {...field} placeholder="e.g., Pump, Fan, Compressor" /></FormControl>
+                        <FormLabel>Aplicación del Motor*</FormLabel>
+                        <FormControl><Input {...field} placeholder="Ej.: Bomba, Ventilador, Compresor" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -394,7 +384,7 @@ export function MotorRequestSheetForm() {
                     name="mounting"
                     render={({ field }) => (
                       <FormItem className="space-y-3">
-                        <FormLabel>Mounting</FormLabel>
+                        <FormLabel>Montaje</FormLabel>
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
@@ -410,13 +400,13 @@ export function MotorRequestSheetForm() {
                                 <FormField control={form.control} name="cFlange" render={({ field: cField }) => (
                                   <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                                     <FormControl><Checkbox checked={cField.value} onCheckedChange={cField.onChange} /></FormControl>
-                                    <FormLabel className="font-normal">C Flange</FormLabel>
+                                    <FormLabel className="font-normal">Brida C</FormLabel>
                                   </FormItem>
                                 )}/>
                                 <FormField control={form.control} name="dFlange" render={({ field: dField }) => (
                                   <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                                     <FormControl><Checkbox checked={dField.value} onCheckedChange={dField.onChange} /></FormControl>
-                                    <FormLabel className="font-normal">D Flange</FormLabel>
+                                    <FormLabel className="font-normal">Brida D</FormLabel>
                                   </FormItem>
                                 )}/>
                               </div>
@@ -433,13 +423,13 @@ export function MotorRequestSheetForm() {
                   />
 
                   <FormItem>
-                    <FormLabel>Efficiency</FormLabel>
+                    <FormLabel>Eficiencia</FormLabel>
                     <FormField control={form.control} name="efficiency" render={() => (
                         <>
                         {[
-                            {id: "IE1", label: "Standard Efficient (IE1)"},
-                            {id: "IE2", label: "Energy Efficient (IE2)"},
-                            {id: "IE3", label: "Premium Efficient (IE3)"},
+                            {id: "IE1", label: "Eficiencia Estándar (IE1)"},
+                            {id: "IE2", label: "Eficiencia Energética (IE2)"},
+                            {id: "IE3", label: "Eficiencia Premium (IE3)"},
                         ].map((item) => (
                             <FormField
                             key={item.id}
@@ -478,38 +468,38 @@ export function MotorRequestSheetForm() {
                     <FormMessage />
                   </FormItem>
 
-                  <FormField control={form.control} name="designDownThrust" render={({ field }) => ( <FormItem><FormLabel>Design Down Thrust (lbs)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="shutOffThrust" render={({ field }) => ( <FormItem><FormLabel>Shut off Thrust</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="horsepowerKW" render={({ field }) => ( <FormItem><FormLabel>Horsepower/KW*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="designDownThrust" render={({ field }) => ( <FormItem><FormLabel>Empuje Descendente de Diseño (lbs)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="shutOffThrust" render={({ field }) => ( <FormItem><FormLabel>Empuje de Cierre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="horsepowerKW" render={({ field }) => ( <FormItem><FormLabel>Potencia (HP/KW)*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="rpm" render={({ field }) => ( <FormItem><FormLabel>RPM*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="frequency" render={({ field }) => ( <FormItem><FormLabel>Frequency (Hz)*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="voltage" render={({ field }) => ( <FormItem><FormLabel>Voltage*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="frameSize" render={({ field }) => ( <FormItem><FormLabel>Frame Size*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="enclosureIP" render={({ field }) => ( <FormItem><FormLabel>Enclosure (IP)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="serviceFactor" render={({ field }) => ( <FormItem><FormLabel>Service Factor</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="startingMethod" render={({ field }) => ( <FormItem><FormLabel>Starting Method</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="frequency" render={({ field }) => ( <FormItem><FormLabel>Frecuencia (Hz)*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="voltage" render={({ field }) => ( <FormItem><FormLabel>Voltaje*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="frameSize" render={({ field }) => ( <FormItem><FormLabel>Tamaño de Carcasa*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="enclosureIP" render={({ field }) => ( <FormItem><FormLabel>Encapsulado (IP)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="serviceFactor" render={({ field }) => ( <FormItem><FormLabel>Factor de Servicio</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="startingMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Arranque</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 </div>
 
                 {/* Column 2 */}
                 <div className="space-y-6">
-                  <FormField control={form.control} name="insulationClass" render={({ field }) => ( <FormItem><FormLabel>Insulation Class</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="ambientC" render={({ field }) => ( <FormItem><FormLabel>Ambient °C</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="assemblyPosition" render={({ field }) => ( <FormItem><FormLabel>Assembly Position</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="rotation" render={({ field }) => ( <FormItem><FormLabel>Rotation (Facing Opposite Drive End)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="insulationClass" render={({ field }) => ( <FormItem><FormLabel>Clase de Aislamiento</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="ambientC" render={({ field }) => ( <FormItem><FormLabel>Ambiente °C</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="assemblyPosition" render={({ field }) => ( <FormItem><FormLabel>Posición de Montaje</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="rotation" render={({ field }) => ( <FormItem><FormLabel>Rotación (Visto desde el Extremo Opuesto al Accionamiento)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   
                   <Card>
-                    <CardHeader><CardTitle className="text-base">Hazardous/Explosion Proof</CardTitle><CardDescription className="text-xs">Please indicate Division, Class, Group and Temp Code</CardDescription></CardHeader>
+                    <CardHeader><CardTitle className="text-base">A Prueba de Explosión/Peligroso</CardTitle><CardDescription className="text-xs">Por favor, indique División, Clase, Grupo y Código de Temperatura</CardDescription></CardHeader>
                     <CardContent className="space-y-4">
-                      <FormField control={form.control} name="hazardousProof" render={({ field }) => ( <FormItem><FormLabel>Proof?</FormLabel><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Yes</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="no" /></FormControl><FormLabel className="font-normal">No</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
-                      <FormField control={form.control} name="hazardousListed" render={({ field }) => ( <FormItem><FormLabel>Listed?</FormLabel><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="listed" /></FormControl><FormLabel className="font-normal">Listed</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="non-listed" /></FormControl><FormLabel className="font-normal">Non-Listed</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
-                      <FormField control={form.control} name="hazardousCertified" render={({ field }) => ( <FormItem><FormLabel>Certified?</FormLabel><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="self-certified" /></FormControl><FormLabel className="font-normal">Self Certified</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="csa-certified" /></FormControl><FormLabel className="font-normal">CSA Certified</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="hazardousProof" render={({ field }) => ( <FormItem><FormLabel>¿A prueba de explosión?</FormLabel><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Sí</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="no" /></FormControl><FormLabel className="font-normal">No</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="hazardousListed" render={({ field }) => ( <FormItem><FormLabel>¿Listado?</FormLabel><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="listed" /></FormControl><FormLabel className="font-normal">Listado</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="non-listed" /></FormControl><FormLabel className="font-normal">No Listado</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="hazardousCertified" render={({ field }) => ( <FormItem><FormLabel>¿Certificado?</FormLabel><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="self-certified" /></FormControl><FormLabel className="font-normal">Autocertificado</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="csa-certified" /></FormControl><FormLabel className="font-normal">Certificado CSA</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
                       <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="hazardousDivision" render={({ field }) => ( <FormItem><FormLabel>Division</FormLabel><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="division1" /></FormControl><FormLabel className="font-normal">1</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="division2" /></FormControl><FormLabel className="font-normal">2</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name="hazardousClass" render={({ field }) => ( <FormItem><FormLabel>Class</FormLabel><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="classI" /></FormControl><FormLabel className="font-normal">I</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="classII" /></FormControl><FormLabel className="font-normal">II</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="hazardousDivision" render={({ field }) => ( <FormItem><FormLabel>División</FormLabel><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="division1" /></FormControl><FormLabel className="font-normal">1</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="division2" /></FormControl><FormLabel className="font-normal">2</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="hazardousClass" render={({ field }) => ( <FormItem><FormLabel>Clase</FormLabel><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="classI" /></FormControl><FormLabel className="font-normal">I</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="classII" /></FormControl><FormLabel className="font-normal">II</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
                       </div>
                       {form.watch("hazardousClass") === "classI" && (
                         <FormItem>
-                          <FormLabel>Group (Class I)</FormLabel>
+                          <FormLabel>Grupo (Clase I)</FormLabel>
                           <div className="grid grid-cols-2 gap-2">
                             <FormField control={form.control} name="hazardousGroupA" render={({ field }) => (<FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">A</FormLabel></FormItem>)}/>
                             <FormField control={form.control} name="hazardousGroupB" render={({ field }) => (<FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">B</FormLabel></FormItem>)}/>
@@ -520,7 +510,7 @@ export function MotorRequestSheetForm() {
                       )}
                       {form.watch("hazardousClass") === "classII" && (
                         <FormItem>
-                          <FormLabel>Group (Class II)</FormLabel>
+                          <FormLabel>Grupo (Clase II)</FormLabel>
                           <div className="grid grid-cols-2 gap-2">
                             <FormField control={form.control} name="hazardousGroupE" render={({ field }) => (<FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">E</FormLabel></FormItem>)}/>
                             <FormField control={form.control} name="hazardousGroupF" render={({ field }) => (<FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">F</FormLabel></FormItem>)}/>
@@ -528,7 +518,7 @@ export function MotorRequestSheetForm() {
                           </div>
                         </FormItem>
                       )}
-                      <FormField control={form.control} name="temperatureCode" render={({ field }) => ( <FormItem><FormLabel>Temperature Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="temperatureCode" render={({ field }) => ( <FormItem><FormLabel>Código de Temperatura</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                     </CardContent>
                   </Card>
                 </div>
@@ -538,16 +528,16 @@ export function MotorRequestSheetForm() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <Card>
-                  <CardHeader><CardTitle className="text-base">Inverter Duty</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-base">Servicio con Inversor</CardTitle></CardHeader>
                   <CardContent className="space-y-4">
-                    <FormField control={form.control} name="inverterDuty" render={({ field }) => ( <FormItem><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Yes</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="no" /></FormControl><FormLabel className="font-normal">No</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
+                    <FormField control={form.control} name="inverterDuty" render={({ field }) => ( <FormItem><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Sí</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="no" /></FormControl><FormLabel className="font-normal">No</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
                     {form.watch("inverterDuty") === "yes" && (
                         <Card className="p-4">
-                            <CardHeader><CardTitle className="text-sm">Speed Range</CardTitle></CardHeader>
+                            <CardHeader><CardTitle className="text-sm">Rango de Velocidad</CardTitle></CardHeader>
                             <CardContent className="space-y-3">
-                                <FormField control={form.control} name="variableTorqueValue" render={({ field }) => ( <FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Variable Torque Value</FormLabel><FormControl><Input {...form.register("variableTorqueSpeedRange")} placeholder="Speed Range" className="ml-2 h-8 text-xs" /></FormControl></FormItem>)}/>
-                                <FormField control={form.control} name="constantTorqueValue" render={({ field }) => ( <FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Constant Torque Value</FormLabel><FormControl><Input {...form.register("constantTorqueSpeedRange")} placeholder="Speed Range" className="ml-2 h-8 text-xs"/></FormControl></FormItem>)}/>
-                                <FormField control={form.control} name="constantHP" render={({ field }) => ( <FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Constant HP</FormLabel></FormItem>)}/>
+                                <FormField control={form.control} name="variableTorqueValue" render={({ field }) => ( <FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Valor de Torque Variable</FormLabel><FormControl><Input {...form.register("variableTorqueSpeedRange")} placeholder="Rango de Velocidad" className="ml-2 h-8 text-xs" /></FormControl></FormItem>)}/>
+                                <FormField control={form.control} name="constantTorqueValue" render={({ field }) => ( <FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Valor de Torque Constante</FormLabel><FormControl><Input {...form.register("constantTorqueSpeedRange")} placeholder="Rango de Velocidad" className="ml-2 h-8 text-xs"/></FormControl></FormItem>)}/>
+                                <FormField control={form.control} name="constantHP" render={({ field }) => ( <FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">HP Constante</FormLabel></FormItem>)}/>
                             </CardContent>
                         </Card>
                     )}
@@ -555,15 +545,15 @@ export function MotorRequestSheetForm() {
                 </Card>
 
                 <Card>
-                  <CardHeader><CardTitle className="text-base">Connection to Load</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-base">Conexión a la Carga</CardTitle></CardHeader>
                   <CardContent className="space-y-3">
-                    <FormField control={form.control} name="directConnected" render={({ field }) => ( <FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Direct Connected to Load</FormLabel></FormItem>)}/>
-                    <FormField control={form.control} name="beltedConnection" render={({ field }) => ( <FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Belted Connection To Load</FormLabel></FormItem>)}/>
-                    <FormField control={form.control} name="driveSheaveOuterDiameter" render={({ field }) => ( <FormItem><FormLabel className="text-sm">Drive Sheave Outer Diameter</FormLabel><FormControl><Input {...field} className="h-8 text-xs"/></FormControl></FormItem>)}/>
-                    <FormField control={form.control} name="drivenSheaveOuterDiameter" render={({ field }) => ( <FormItem><FormLabel className="text-sm">Driven Sheave Outer Diameter</FormLabel><FormControl><Input {...field} className="h-8 text-xs"/></FormControl></FormItem>)}/>
-                    <FormField control={form.control} name="sheaveCenterDiameter" render={({ field }) => ( <FormItem><FormLabel className="text-sm">Sheave Center Diameter</FormLabel><FormControl><Input {...field} className="h-8 text-xs"/></FormControl></FormItem>)}/>
-                    <FormField control={form.control} name="beltType" render={({ field }) => ( <FormItem><FormLabel className="text-sm">Belt Type</FormLabel><FormControl><Input {...field} className="h-8 text-xs"/></FormControl></FormItem>)}/>
-                    <FormField control={form.control} name="noOfBelts" render={({ field }) => ( <FormItem><FormLabel className="text-sm">No. of belts</FormLabel><FormControl><Input {...field} className="h-8 text-xs"/></FormControl></FormItem>)}/>
+                    <FormField control={form.control} name="directConnected" render={({ field }) => ( <FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Conectado Directamente a la Carga</FormLabel></FormItem>)}/>
+                    <FormField control={form.control} name="beltedConnection" render={({ field }) => ( <FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Conexión por Correa a la Carga</FormLabel></FormItem>)}/>
+                    <FormField control={form.control} name="driveSheaveOuterDiameter" render={({ field }) => ( <FormItem><FormLabel className="text-sm">Diámetro Exterior de la Polea Motriz</FormLabel><FormControl><Input {...field} className="h-8 text-xs"/></FormControl></FormItem>)}/>
+                    <FormField control={form.control} name="drivenSheaveOuterDiameter" render={({ field }) => ( <FormItem><FormLabel className="text-sm">Diámetro Exterior de la Polea Conducida</FormLabel><FormControl><Input {...field} className="h-8 text-xs"/></FormControl></FormItem>)}/>
+                    <FormField control={form.control} name="sheaveCenterDiameter" render={({ field }) => ( <FormItem><FormLabel className="text-sm">Diámetro Central de la Polea</FormLabel><FormControl><Input {...field} className="h-8 text-xs"/></FormControl></FormItem>)}/>
+                    <FormField control={form.control} name="beltType" render={({ field }) => ( <FormItem><FormLabel className="text-sm">Tipo de Correa</FormLabel><FormControl><Input {...field} className="h-8 text-xs"/></FormControl></FormItem>)}/>
+                    <FormField control={form.control} name="noOfBelts" render={({ field }) => ( <FormItem><FormLabel className="text-sm">Nº de Correas</FormLabel><FormControl><Input {...field} className="h-8 text-xs"/></FormControl></FormItem>)}/>
                   </CardContent>
                 </Card>
               </div>
@@ -575,8 +565,8 @@ export function MotorRequestSheetForm() {
                 name="additionalNotes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Additional Notes or Special Features</FormLabel>
-                    <FormControl><Textarea {...field} placeholder="Enter any additional notes or special features..." rows={4}/></FormControl>
+                    <FormLabel>Notas Adicionales o Características Especiales</FormLabel>
+                    <FormControl><Textarea {...field} placeholder="Ingrese cualquier nota adicional o característica especial..." rows={4}/></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -585,14 +575,14 @@ export function MotorRequestSheetForm() {
               <Separator />
 
               <Card>
-                <CardHeader><CardTitle className="text-base">Replacement Motor</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-base">Motor de Reemplazo</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="replacementBrandName" render={({ field }) => ( <FormItem><FormLabel>Brand Name:</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)}/>
-                    <FormField control={form.control} name="replacementCatalogModelID" render={({ field }) => ( <FormItem><FormLabel>Catalog/Model/ID#</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)}/>
+                    <FormField control={form.control} name="replacementBrandName" render={({ field }) => ( <FormItem><FormLabel>Marca:</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)}/>
+                    <FormField control={form.control} name="replacementCatalogModelID" render={({ field }) => ( <FormItem><FormLabel>Catálogo/Modelo/ID#</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)}/>
                 </CardContent>
               </Card>
 
-              <p className="text-xs text-muted-foreground">*Required field to fill in</p>
+              <p className="text-xs text-muted-foreground">*Campo obligatorio a rellenar</p>
 
               <div className="flex justify-end space-x-4 pt-6">
                  <Button type="button" variant="outline" onClick={() => form.reset()} className="border-primary text-primary hover:bg-primary/10">
