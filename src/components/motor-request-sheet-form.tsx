@@ -100,6 +100,7 @@ export function MotorRequestSheetForm() {
     defaultValues: {
       finalClient: '',
       salesPerson: '',
+      countryOfDestination: '',
       motorApplication: '',
       horsepowerKW: '',
       rpm: '',
@@ -353,7 +354,7 @@ export function MotorRequestSheetForm() {
         <CardHeader className="bg-primary text-primary-foreground p-6">
           <div className="flex items-center space-x-3">
             <FileText className="h-8 w-8" />
-            <CardTitle className="text-2xl font-bold">Hoja de Solicitud de Motor</CardTitle>
+            <CardTitle className="text-2xl font-bold">Formulario de Solicitud de Motor</CardTitle>
           </div>
           <CardDescription className="text-primary-foreground/90 mt-2">
             Complete el siguiente formulario para solicitar un motor diseñado a pedido. Los campos marcados con (*) son obligatorios.
