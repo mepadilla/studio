@@ -101,7 +101,7 @@ export function MotorRequestSheetForm() {
       rpm: '',
       frequency: '',
       voltage: '',
-      frameSize: '',
+      frameSize: '', // Ya era opcional, así que el valor por defecto es correcto
       efficiency: [],
       // Initialize other fields as needed
     },
@@ -204,8 +204,8 @@ export function MotorRequestSheetForm() {
     let yPosCol2 = yPos;
 
     // Column 1
-    yPosCol1 = drawField('País de Destino', currentFormData.countryOfDestination, col1X, yPosCol1, colWidth, fieldLabelWidth);
-    yPosCol1 = drawField('Aplicación del Motor', currentFormData.motorApplication, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
+    yPosCol1 = drawField('País de Destino:', currentFormData.countryOfDestination, col1X, yPosCol1, colWidth, fieldLabelWidth);
+    yPosCol1 = drawField('Aplicación del Motor:', currentFormData.motorApplication, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
     
     doc.setFontSize(8); doc.text('Montaje:', col1X, yPosCol1 + 8); yPosCol1 += 12;
     drawRadio('Horizontal', currentFormData.mounting === 'horizontal', col1X + 10, yPosCol1); yPosCol1 += 12;
@@ -218,22 +218,22 @@ export function MotorRequestSheetForm() {
     drawCheckbox('Eficiencia Energética (IE2)', currentFormData.efficiency?.includes("IE2"), col1X + 10, yPosCol1); yPosCol1 += 12;
     drawCheckbox('Eficiencia Premium (IE3)', currentFormData.efficiency?.includes("IE3"), col1X + 10, yPosCol1); yPosCol1 += 18;
     
-    yPosCol1 = drawField('Empuje Descendente de Diseño (lbs)', currentFormData.designDownThrust, col1X, yPosCol1, colWidth, fieldLabelWidth);
-    yPosCol1 = drawField('Empuje de Cierre', currentFormData.shutOffThrust, col1X, yPosCol1, colWidth, fieldLabelWidth);
-    yPosCol1 = drawField('Potencia (HP/KW)', currentFormData.horsepowerKW, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
-    yPosCol1 = drawField('RPM', currentFormData.rpm, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
-    yPosCol1 = drawField('Frecuencia (Hz)', currentFormData.frequency, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
-    yPosCol1 = drawField('Voltaje', currentFormData.voltage, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
-    yPosCol1 = drawField('Tamaño de Carcasa', currentFormData.frameSize, col1X, yPosCol1, colWidth, fieldLabelWidth, false); // Required set to false
-    yPosCol1 = drawField('Encapsulado (IP)', currentFormData.enclosureIP, col1X, yPosCol1, colWidth, fieldLabelWidth);
-    yPosCol1 = drawField('Factor de Servicio', currentFormData.serviceFactor, col1X, yPosCol1, colWidth, fieldLabelWidth);
-    yPosCol1 = drawField('Método de Arranque', currentFormData.startingMethod, col1X, yPosCol1, colWidth, fieldLabelWidth);
+    yPosCol1 = drawField('Empuje Descendente de Diseño (lbs):', currentFormData.designDownThrust, col1X, yPosCol1, colWidth, fieldLabelWidth + 30);
+    yPosCol1 = drawField('Empuje de Cierre:', currentFormData.shutOffThrust, col1X, yPosCol1, colWidth, fieldLabelWidth);
+    yPosCol1 = drawField('Potencia (HP/KW):', currentFormData.horsepowerKW, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
+    yPosCol1 = drawField('RPM:', currentFormData.rpm, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
+    yPosCol1 = drawField('Frecuencia (Hz):', currentFormData.frequency, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
+    yPosCol1 = drawField('Voltaje:', currentFormData.voltage, col1X, yPosCol1, colWidth, fieldLabelWidth, true);
+    yPosCol1 = drawField('Tamaño de Carcasa - FRAME:', currentFormData.frameSize, col1X, yPosCol1, colWidth, fieldLabelWidth + 20, false); // Required set to false
+    yPosCol1 = drawField('Encapsulado (IP):', currentFormData.enclosureIP, col1X, yPosCol1, colWidth, fieldLabelWidth);
+    yPosCol1 = drawField('Factor de Servicio:', currentFormData.serviceFactor, col1X, yPosCol1, colWidth, fieldLabelWidth);
+    yPosCol1 = drawField('Método de Arranque:', currentFormData.startingMethod, col1X, yPosCol1, colWidth, fieldLabelWidth);
 
     // Column 2
-    yPosCol2 = drawField('Clase de Aislamiento', currentFormData.insulationClass, col2X, yPosCol2, colWidth, fieldLabelWidth);
-    yPosCol2 = drawField('Ambiente °C', currentFormData.ambientC, col2X, yPosCol2, colWidth, fieldLabelWidth);
-    yPosCol2 = drawField('Posición de Montaje', currentFormData.assemblyPosition, col2X, yPosCol2, colWidth, fieldLabelWidth);
-    yPosCol2 = drawField('Rotación (Visto desde el Extremo Opuesto al Accionamiento)', currentFormData.rotation, col2X, yPosCol2, colWidth, fieldLabelWidth);
+    yPosCol2 = drawField('Clase de Aislamiento:', currentFormData.insulationClass, col2X, yPosCol2, colWidth, fieldLabelWidth);
+    yPosCol2 = drawField('Ambiente °C:', currentFormData.ambientC, col2X, yPosCol2, colWidth, fieldLabelWidth);
+    yPosCol2 = drawField('Posición de Montaje:', currentFormData.assemblyPosition, col2X, yPosCol2, colWidth, fieldLabelWidth);
+    yPosCol2 = drawField('Rotación (Visto desde Extremo Opuesto al Accionamiento):', currentFormData.rotation, col2X, yPosCol2, colWidth, fieldLabelWidth + 60);
     
     doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.text('A Prueba de Explosión/Peligroso', col2X, yPosCol2 + 8); yPosCol2 += 12;
     doc.setFontSize(7); doc.text('(Por favor, indique División, Clase, Grupo y Código de Temperatura)', col2X, yPosCol2 + 8); yPosCol2 += 12;
@@ -249,20 +249,20 @@ export function MotorRequestSheetForm() {
     drawRadio('División 2', currentFormData.hazardousDivision === 'division2', col2X + colWidth / 2, yPosCol2); yPosCol2 += 12;
     
     drawRadio('Clase I', currentFormData.hazardousClass === 'classI', col2X + 10, yPosCol2);
-    doc.text('Grupo', col2X + 20, yPosCol2 + 10); yPosCol2 += 12;
+    doc.text('Grupo:', col2X + 20, yPosCol2 + 10); yPosCol2 += 12;
     drawCheckbox('A', currentFormData.hazardousGroupA, col2X + 25, yPosCol2);
     drawCheckbox('B', currentFormData.hazardousGroupB, col2X + 55, yPosCol2); yPosCol2 += 12;
     drawCheckbox('C', currentFormData.hazardousGroupC, col2X + 25, yPosCol2);
     drawCheckbox('D', currentFormData.hazardousGroupD, col2X + 55, yPosCol2); yPosCol2 += 12;
 
     drawRadio('Clase II', currentFormData.hazardousClass === 'classII', col2X + colWidth / 2, yPosCol2 - 24); // Align with Class I
-    doc.text('Grupo', col2X + colWidth/2 + 10, yPosCol2 + 10 -12); yPosCol2 += 12;
+    doc.text('Grupo:', col2X + colWidth/2 + 10, yPosCol2 + 10 -12); yPosCol2 += 12;
     drawCheckbox('E', currentFormData.hazardousGroupE, col2X + colWidth / 2 + 15, yPosCol2 -24);
     drawCheckbox('F', currentFormData.hazardousGroupF, col2X + colWidth / 2 + 45, yPosCol2-24); yPosCol2 += 12;
     drawCheckbox('G', currentFormData.hazardousGroupG, col2X + colWidth / 2 + 15, yPosCol2-24);
     
     yPosCol2 += 12; // Space before Temp Code
-    yPosCol2 = drawField('Código de Temperatura', currentFormData.temperatureCode, col2X, yPosCol2, colWidth, fieldLabelWidth -30); // Shorter label width for this one
+    yPosCol2 = drawField('Código de Temperatura:', currentFormData.temperatureCode, col2X, yPosCol2, colWidth, fieldLabelWidth -30); // Shorter label width for this one
 
     // Align yPos for next sections
     yPos = Math.max(yPosCol1, yPosCol2) + 10;
@@ -270,13 +270,13 @@ export function MotorRequestSheetForm() {
     // --- Inverter Duty Section ---
     doc.rect(margin, yPos, contentWidth, 70, 'S'); // Box for Inverter Duty
     yPos += 5;
-    doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.text('Servicio con Inversor', margin + 5, yPos + 8);
-    drawRadio('Sí', currentFormData.inverterDuty === 'yes', margin + 100, yPos);
-    drawRadio('No', currentFormData.inverterDuty === 'no', margin + 150, yPos);
+    doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.text('Servicio con Inversor:', margin + 5, yPos + 8);
+    drawRadio('Sí', currentFormData.inverterDuty === 'yes', margin + 120, yPos);
+    drawRadio('No', currentFormData.inverterDuty === 'no', margin + 170, yPos);
     yPos += 18;
 
     doc.setFontSize(8); doc.setFont(undefined, 'normal');
-    doc.text('Rango de Velocidad', margin + colWidth/2 - 50, yPos + 8, {align: 'center'});
+    doc.text('Rango de Velocidad:', margin + colWidth/2 - 50, yPos + 8, {align: 'center'});
     yPos += 12;
 
     drawCheckbox('Valor de Torque Variable', currentFormData.variableTorqueValue, margin + 10, yPos);
@@ -292,23 +292,23 @@ export function MotorRequestSheetForm() {
     let yPosConnect = yPos - 70 + 5; // Align to top of inverter duty box
     const connectX = col2X;
 
-    doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.text('Conexión a la Carga', connectX, yPosConnect + 8); yPosConnect += 18;
+    doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.text('Conexión a la Carga:', connectX, yPosConnect + 8); yPosConnect += 18;
     doc.setFontSize(8); doc.setFont(undefined, 'normal');
     
     drawCheckbox('Conectado Directamente a la Carga', currentFormData.directConnected, connectX + 5, yPosConnect); yPosConnect += 12;
     drawCheckbox('Conexión por Correa a la Carga', currentFormData.beltedConnection, connectX + 5, yPosConnect); yPosConnect += 12;
     
-    yPosConnect = drawField('Diámetro Exterior de la Polea Motriz', currentFormData.driveSheaveOuterDiameter, connectX, yPosConnect, colWidth, fieldLabelWidth + 20);
-    yPosConnect = drawField('Diámetro Exterior de la Polea Conducida', currentFormData.drivenSheaveOuterDiameter, connectX, yPosConnect, colWidth, fieldLabelWidth + 20);
-    yPosConnect = drawField('Diámetro Central de la Polea', currentFormData.sheaveCenterDiameter, connectX, yPosConnect, colWidth, fieldLabelWidth + 20);
-    yPosConnect = drawField('Tipo de Correa', currentFormData.beltType, connectX, yPosConnect, colWidth, fieldLabelWidth);
-    yPosConnect = drawField('Nº de Correas', currentFormData.noOfBelts, connectX, yPosConnect, colWidth, fieldLabelWidth);
+    yPosConnect = drawField('Diámetro Exterior de la Polea Motriz:', currentFormData.driveSheaveOuterDiameter, connectX, yPosConnect, colWidth, fieldLabelWidth + 40);
+    yPosConnect = drawField('Diámetro Exterior de la Polea Conducida:', currentFormData.drivenSheaveOuterDiameter, connectX, yPosConnect, colWidth, fieldLabelWidth + 40);
+    yPosConnect = drawField('Diámetro Central de la Polea:', currentFormData.sheaveCenterDiameter, connectX, yPosConnect, colWidth, fieldLabelWidth + 30);
+    yPosConnect = drawField('Tipo de Correa:', currentFormData.beltType, connectX, yPosConnect, colWidth, fieldLabelWidth);
+    yPosConnect = drawField('Nº de Correas:', currentFormData.noOfBelts, connectX, yPosConnect, colWidth, fieldLabelWidth);
     
     yPos = Math.max(yPos, yPosConnect) + 10;
 
 
     // --- Additional Notes ---
-    yPos = drawSectionTitle('Notas Adicionales o Características Especiales', yPos);
+    yPos = drawSectionTitle('Notas Adicionales o Características Especiales:', yPos);
     doc.setFillColor(220, 255, 220); // Light green
     doc.rect(margin, yPos, contentWidth, 40, 'F');
     doc.setFontSize(8);
@@ -317,11 +317,11 @@ export function MotorRequestSheetForm() {
     yPos += 50;
 
     // --- Replacement Motor ---
-    yPos = drawSectionTitle('MOTOR DE REEMPLAZO', yPos, 10, true);
+    yPos = drawSectionTitle('MOTOR DE REEMPLAZO:', yPos, 10, true);
     doc.rect(margin, yPos, contentWidth, 40, 'S'); // Box for replacement
     yPos += 5;
     yPos = drawField('Marca:', currentFormData.replacementBrandName, margin + 5, yPos, contentWidth -10, fieldLabelWidth-30);
-    yPos = drawField('Catálogo/Modelo/ID#', currentFormData.replacementCatalogModelID, margin + 5, yPos, contentWidth -10, fieldLabelWidth-30);
+    yPos = drawField('Catálogo/Modelo/ID#:', currentFormData.replacementCatalogModelID, margin + 5, yPos, contentWidth -10, fieldLabelWidth-30);
     yPos += 20;
 
 
@@ -474,7 +474,7 @@ export function MotorRequestSheetForm() {
                   <FormField control={form.control} name="rpm" render={({ field }) => ( <FormItem><FormLabel>RPM*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="frequency" render={({ field }) => ( <FormItem><FormLabel>Frecuencia (Hz)*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="voltage" render={({ field }) => ( <FormItem><FormLabel>Voltaje*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="frameSize" render={({ field }) => ( <FormItem><FormLabel>Tamaño de Carcasa</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="frameSize" render={({ field }) => ( <FormItem><FormLabel>Tamaño de Carcasa - FRAME</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="enclosureIP" render={({ field }) => ( <FormItem><FormLabel>Encapsulado (IP)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="serviceFactor" render={({ field }) => ( <FormItem><FormLabel>Factor de Servicio</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="startingMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Arranque</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
@@ -530,7 +530,7 @@ export function MotorRequestSheetForm() {
                 <Card>
                   <CardHeader><CardTitle className="text-base">Servicio con Inversor</CardTitle></CardHeader>
                   <CardContent className="space-y-4">
-                    <FormField control={form.control} name="inverterDuty" render={({ field }) => ( <FormItem><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Sí</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="no" /></FormControl><FormLabel className="font-normal">No</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
+                    <FormField control={form.control} name="inverterDuty" render={({ field }) => ( <FormItem><FormLabel>¿Para servicio con inversor?</FormLabel><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Sí</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="no" /></FormControl><FormLabel className="font-normal">No</FormLabel></FormItem></RadioGroup><FormMessage /></FormItem>)}/>
                     {form.watch("inverterDuty") === "yes" && (
                         <Card className="p-4">
                             <CardHeader><CardTitle className="text-sm">Rango de Velocidad</CardTitle></CardHeader>
@@ -578,7 +578,7 @@ export function MotorRequestSheetForm() {
                 <CardHeader><CardTitle className="text-base">Motor de Reemplazo</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="replacementBrandName" render={({ field }) => ( <FormItem><FormLabel>Marca:</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)}/>
-                    <FormField control={form.control} name="replacementCatalogModelID" render={({ field }) => ( <FormItem><FormLabel>Catálogo/Modelo/ID#</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)}/>
+                    <FormField control={form.control} name="replacementCatalogModelID" render={({ field }) => ( <FormItem><FormLabel>Catálogo/Modelo/ID#:</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)}/>
                 </CardContent>
               </Card>
 
