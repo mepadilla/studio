@@ -93,8 +93,12 @@ export default function RootLayout({
                                 <MenubarSub>
                                   <MenubarSubTrigger>Motores Eléctricos</MenubarSubTrigger>
                                   <MenubarSubContent>
-                                    <MenubarItem disabled>Próximamente...</MenubarItem>
-                                    {/* Add links to motor format pages here */}
+                                    <MenubarItem asChild>
+                                      <Link href="/documentation/formats/electric-motors/request-sheet" className="w-full">
+                                        Solicitud Motor a Pedido
+                                      </Link>
+                                    </MenubarItem>
+                                    {/* Add more links to motor format pages here */}
                                   </MenubarSubContent>
                                 </MenubarSub>
                                 {/* Sub-menu for "Bombas" */}
