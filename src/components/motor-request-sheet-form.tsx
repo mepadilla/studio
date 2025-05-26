@@ -250,17 +250,17 @@ export function MotorRequestSheetForm() {
     const rotationLabelText = "Rotación (Visto desde Extremo Opuesto al Accionamiento):";
     const rotationLabelLines = doc.splitTextToSize(rotationLabelText, colWidth);
     doc.text(rotationLabelLines, col2X, yPosCol2 + 8); // Draw label
-    yPosCol2 += rotationLabelLines.length * 10; // Advance Y based on number of label lines (approx 10pt per line for 8pt font)
+    yPosCol2 += rotationLabelLines.length * 10; // Advance Y based on number of label lines
 
     // Draw the value field for 'Rotación' on the next line
     doc.setFillColor(220, 255, 220); // Light green
     doc.rect(col2X, yPosCol2, colWidth, 12, 'F'); // Value box spans full colWidth
     doc.setFontSize(8);
     doc.text(currentFormData.rotation || '', col2X + 3, yPosCol2 + 8);
-    yPosCol2 += 18; // Advance Y for the value field (standard field height)
+    yPosCol2 += 18; // Advance Y for the value field
     
     doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.text('A Prueba de Explosión/Peligroso', col2X, yPosCol2 + 8); yPosCol2 += 12;
-    doc.setFontSize(7); doc.text('(Por favor, indique División, Clase, Grupo y Código de Temperatura)', col2X, yPosCol2 + 8); yPosCol2 += 12;
+    doc.setFontSize(7); doc.text('(Por favor, indique División, Clase, Grupo y Código de Temperatura)', col2X, yPosCol2 + 8); yPosCol2 += 18; // Increased space
     
     drawRadio('Sí', currentFormData.hazardousProof === 'yes', col2X + 10, yPosCol2);
     drawRadio('No', currentFormData.hazardousProof === 'no', col2X + 70, yPosCol2); yPosCol2 += 12;
@@ -269,24 +269,51 @@ export function MotorRequestSheetForm() {
     drawRadio('Autocertificado', currentFormData.hazardousCertified === 'self-certified', col2X + 10, yPosCol2);
     drawRadio('Certificado CSA', currentFormData.hazardousCertified === 'csa-certified', col2X + 100, yPosCol2); yPosCol2 += 18;
 
-    drawRadio('División 1', currentFormData.hazardousDivision === 'division1', col2X + 10, yPosCol2);
-    drawRadio('División 2', currentFormData.hazardousDivision === 'division2', col2X + colWidth / 2, yPosCol2); yPosCol2 += 12;
-    
-    drawRadio('Clase I', currentFormData.hazardousClass === 'classI', col2X + 10, yPosCol2);
-    doc.text('Grupo:', col2X + 20, yPosCol2 + 10); yPosCol2 += 12;
-    drawCheckbox('A', currentFormData.hazardousGroupA, col2X + 25, yPosCol2);
-    drawCheckbox('B', currentFormData.hazardousGroupB, col2X + 55, yPosCol2); yPosCol2 += 12;
-    drawCheckbox('C', currentFormData.hazardousGroupC, col2X + 25, yPosCol2);
-    drawCheckbox('D', currentFormData.hazardousGroupD, col2X + 55, yPosCol2); yPosCol2 += 12;
+    // División
+    const yDivisionLine = yPosCol2;
+    drawRadio('División 1', currentFormData.hazardousDivision === 'division1', col2X + 10, yDivisionLine);
+    drawRadio('División 2', currentFormData.hazardousDivision === 'division2', col2X + 80, yDivisionLine); // Adjusted spacing for División 2
+    yPosCol2 = yDivisionLine + 18; // Space after Division line
 
-    drawRadio('Clase II', currentFormData.hazardousClass === 'classII', col2X + colWidth / 2, yPosCol2 - 24); // Align with Class I
-    doc.text('Grupo:', col2X + colWidth/2 + 10, yPosCol2 + 10 -12); yPosCol2 += 12;
-    drawCheckbox('E', currentFormData.hazardousGroupE, col2X + colWidth / 2 + 15, yPosCol2 -24);
-    drawCheckbox('F', currentFormData.hazardousGroupF, col2X + colWidth / 2 + 45, yPosCol2-24); yPosCol2 += 12;
-    drawCheckbox('G', currentFormData.hazardousGroupG, col2X + colWidth / 2 + 15, yPosCol2-24);
+    const yClasesStart = yPosCol2;
+    let yTrackClaseI = yClasesStart;
+    let yTrackClaseII = yClasesStart;
+
+    // Clase I
+    drawRadio('Clase I', currentFormData.hazardousClass === 'classI', col2X + 10, yTrackClaseI);
+    if (currentFormData.hazardousClass === 'classI') {
+        yTrackClaseI += 12;
+        doc.setFontSize(8); doc.text('Grupo:', col2X + 15, yTrackClaseI + 8);
+        yTrackClaseI += 12;
+        drawCheckbox('A', currentFormData.hazardousGroupA, col2X + 20, yTrackClaseI);
+        drawCheckbox('B', currentFormData.hazardousGroupB, col2X + 55, yTrackClaseI);
+        yTrackClaseI += 12;
+        drawCheckbox('C', currentFormData.hazardousGroupC, col2X + 20, yTrackClaseI);
+        drawCheckbox('D', currentFormData.hazardousGroupD, col2X + 55, yTrackClaseI);
+        yTrackClaseI += 12;
+    } else {
+        yTrackClaseI += 12; 
+    }
+
+    // Clase II (position it to the right, starting at same y as Clase I)
+    const xClaseII_Offset = 90; // Horizontal offset for Clase II column from col2X
+    drawRadio('Clase II', currentFormData.hazardousClass === 'classII', col2X + xClaseII_Offset, yTrackClaseII);
+    if (currentFormData.hazardousClass === 'classII') {
+        yTrackClaseII += 12;
+        doc.setFontSize(8); doc.text('Grupo:', col2X + xClaseII_Offset + 5, yTrackClaseII + 8);
+        yTrackClaseII += 12;
+        drawCheckbox('E', currentFormData.hazardousGroupE, col2X + xClaseII_Offset + 10, yTrackClaseII);
+        drawCheckbox('F', currentFormData.hazardousGroupF, col2X + xClaseII_Offset + 45, yTrackClaseII);
+        yTrackClaseII += 12;
+        drawCheckbox('G', currentFormData.hazardousGroupG, col2X + xClaseII_Offset + 10, yTrackClaseII);
+        yTrackClaseII += 12;
+    } else {
+        yTrackClaseII += 12; 
+    }
+
+    yPosCol2 = Math.max(yTrackClaseI, yTrackClaseII) + 6; 
     
-    yPosCol2 += 12; // Space before Temp Code
-    yPosCol2 = drawField('Código de Temperatura:', currentFormData.temperatureCode, col2X, yPosCol2, colWidth, fieldLabelWidth -30); // Shorter label width for this one
+    yPosCol2 = drawField('Código de Temperatura:', currentFormData.temperatureCode, col2X, yPosCol2, colWidth, fieldLabelWidth -30); 
 
     // Align yPos for next sections
     yPos = Math.max(yPosCol1, yPosCol2) + 10;
