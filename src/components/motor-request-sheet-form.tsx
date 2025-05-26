@@ -210,7 +210,7 @@ export function MotorRequestSheetForm() {
     // Column 1
     yPosCol1 = drawSectionTitle('Datos de Solicitud:', yPosCol1, 9, true);
     yPosCol1 = drawField('Cliente Final:', currentFormData.finalClient, col1X, yPosCol1, colWidth, fieldLabelWidth);
-    yPosCol1 = drawField('Persona de Ventas:', currentFormData.salesPerson, col1X, yPosCol1, colWidth, fieldLabelWidth);
+    yPosCol1 = drawField('Persona de Ventas Solicitante:', currentFormData.salesPerson, col1X, yPosCol1, colWidth, fieldLabelWidth + 30);
     yPosCol1 = drawField('País de Destino:', currentFormData.countryOfDestination, col1X, yPosCol1, colWidth, fieldLabelWidth);
     yPosCol1 += 6; // Extra space before next section
 
@@ -272,14 +272,16 @@ export function MotorRequestSheetForm() {
     // División
     const yDivisionLine = yPosCol2;
     drawRadio('División 1', currentFormData.hazardousDivision === 'division1', col2X + 10, yDivisionLine);
-    drawRadio('División 2', currentFormData.hazardousDivision === 'division2', col2X + 80, yDivisionLine); // Adjusted spacing for División 2
-    yPosCol2 = yDivisionLine + 18; // Space after Division line
+    drawRadio('División 2', currentFormData.hazardousDivision === 'division2', col2X + 80, yDivisionLine);
+    yPosCol2 = yDivisionLine + 18;
 
+    // Clase y Grupo
     const yClasesStart = yPosCol2;
     let yTrackClaseI = yClasesStart;
     let yTrackClaseII = yClasesStart;
+    const xClaseII_Offset = colWidth / 2 + 5; // Horizontal offset for Clase II column
 
-    // Clase I
+    // Clase I section
     drawRadio('Clase I', currentFormData.hazardousClass === 'classI', col2X + 10, yTrackClaseI);
     if (currentFormData.hazardousClass === 'classI') {
         yTrackClaseI += 12;
@@ -292,11 +294,10 @@ export function MotorRequestSheetForm() {
         drawCheckbox('D', currentFormData.hazardousGroupD, col2X + 55, yTrackClaseI);
         yTrackClaseI += 12;
     } else {
-        yTrackClaseI += 12; 
+        yTrackClaseI += 12; // Minimal space if not selected
     }
 
-    // Clase II (position it to the right, starting at same y as Clase I)
-    const xClaseII_Offset = 90; // Horizontal offset for Clase II column from col2X
+    // Clase II section (positioned to the right)
     drawRadio('Clase II', currentFormData.hazardousClass === 'classII', col2X + xClaseII_Offset, yTrackClaseII);
     if (currentFormData.hazardousClass === 'classII') {
         yTrackClaseII += 12;
@@ -308,12 +309,22 @@ export function MotorRequestSheetForm() {
         drawCheckbox('G', currentFormData.hazardousGroupG, col2X + xClaseII_Offset + 10, yTrackClaseII);
         yTrackClaseII += 12;
     } else {
-        yTrackClaseII += 12; 
+        yTrackClaseII += 12; // Minimal space if not selected
     }
-
-    yPosCol2 = Math.max(yTrackClaseI, yTrackClaseII) + 6; 
     
-    yPosCol2 = drawField('Código de Temperatura:', currentFormData.temperatureCode, col2X, yPosCol2, colWidth, fieldLabelWidth -30); 
+    yPosCol2 = Math.max(yTrackClaseI, yTrackClaseII) + 6;
+
+    // Código de Temperatura
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'normal');
+    doc.text('Código de Temperatura:', col2X, yPosCol2 + 8);
+    yPosCol2 += 12; // Move to next line for the value box
+
+    doc.setFillColor(220, 255, 220); // Light green
+    doc.rect(col2X, yPosCol2, colWidth, 12, 'F'); // Value box spans full colWidth
+    doc.setFontSize(8);
+    doc.text(currentFormData.temperatureCode || '', col2X + 3, yPosCol2 + 8);
+    yPosCol2 += 18; // Advance Y for the value field
 
     // Align yPos for next sections
     yPos = Math.max(yPosCol1, yPosCol2) + 10;
