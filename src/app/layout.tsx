@@ -151,6 +151,13 @@ export default function RootLayout({
                          {/* Add more tool categories here */}
                        </MenubarContent>
                    </MenubarMenu>
+                   <MenubarMenu>
+                       <MenubarTrigger>Selectores</MenubarTrigger>
+                       <MenubarContent>
+                           <MenubarItem disabled>Próximamente...</MenubarItem>
+                           {/* Add selector links/submenus here */}
+                       </MenubarContent>
+                   </MenubarMenu>
                </Menubar>
            </div>
         </header>
@@ -176,3 +183,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    
