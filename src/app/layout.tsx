@@ -154,7 +154,7 @@ export default function RootLayout({
                    <MenubarMenu>
                        <MenubarTrigger>Selectores</MenubarTrigger>
                        <MenubarContent>
-                           <MenubarItem disabled>Próximamente...</MenubarItem>
+                           <MenubarItem disabled>Selector simple Panelli - Próximamente...</MenubarItem>
                            {/* Add selector links/submenus here */}
                        </MenubarContent>
                    </MenubarMenu>
@@ -183,5 +183,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-    
