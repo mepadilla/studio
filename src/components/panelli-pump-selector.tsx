@@ -101,20 +101,15 @@ export function PanelliPumpSelector() {
     setSubmittedPresion(requestedPresion);
     setPdfFormData(data); // Store all form data
     const suitablePumps: SelectionResult[] = [];
-    const messages: SeriesMessage[] = [];
+    // const messages: SeriesMessage[] = []; // Removed to not show series-specific messages
 
     allPumpSeries.forEach((series) => {
       if (requestedCaudal >= series.minFlow && requestedCaudal <= series.maxFlow) { // Inclusive of min/max flow
         let targetFlowRateDisplayIndex = -1;
-        // Find the closest flow rate in the table that is >= requestedCaudal
-        // If no exact match or greater, take the largest available in the series if requestedCaudal is high
-        // Or smallest if requestedCaudal is very low.
-        // This logic aims to find the *best fit* or closest *higher* point in the table.
         
         let bestFitIndex = -1;
         let minDiff = Infinity;
 
-        // Try to find the first point in the table where table_flow >= requested_flow
         for (let m = 0; m < series.flowRates.length; m++) {
           if (series.flowRates[m] >= requestedCaudal) {
             targetFlowRateDisplayIndex = m;
@@ -122,14 +117,12 @@ export function PanelliPumpSelector() {
           }
         }
 
-        // If not found (e.g., requestedCaudal is > max table flow but within series general maxFlow)
-        // then use the last point in the table.
         if (targetFlowRateDisplayIndex === -1 && series.flowRates.length > 0) {
             targetFlowRateDisplayIndex = series.flowRates.length - 1;
         }
         
         if (targetFlowRateDisplayIndex === -1) {
-          messages.push({seriesName: series.seriesName, message: `La Serie ${series.seriesName} no tiene un punto de caudal tabulado adecuado.`, type: 'info'});
+          // messages.push({seriesName: series.seriesName, message: `La Serie ${series.seriesName} no tiene un punto de caudal tabulado adecuado.`, type: 'info'});
           return;
         }
 
@@ -154,17 +147,18 @@ export function PanelliPumpSelector() {
             }
           }
         }
-        if (!modelFoundInSeries) {
-            messages.push({seriesName: series.seriesName, message: `Para la Serie ${series.seriesName}: Ningún modelo cumple la presión requerida con el caudal tabulado más cercano (${series.flowRates[targetFlowRateDisplayIndex]} ${series.flowRateUnit}).`, type: 'info'});
-        }
+        // if (!modelFoundInSeries) {
+            // messages.push({seriesName: series.seriesName, message: `Para la Serie ${series.seriesName}: Ningún modelo cumple la presión requerida con el caudal tabulado más cercano (${series.flowRates[targetFlowRateDisplayIndex]} ${series.flowRateUnit}).`, type: 'info'});
+        // }
 
-      } else {
-        messages.push({seriesName: series.seriesName, message: `El caudal solicitado está fuera del rango de operación de la Serie ${series.seriesName} (${series.minFlow}-${series.maxFlow} ${series.flowRateUnit}).`, type: 'warning'});
-      }
+      } 
+      // else { // Removed - do not show out-of-range messages
+        // messages.push({seriesName: series.seriesName, message: `El caudal solicitado está fuera del rango de operación de la Serie ${series.seriesName} (${series.minFlow}-${series.maxFlow} ${series.flowRateUnit}).`, type: 'warning'});
+      // }
     });
 
     setSelectionResults(suitablePumps);
-    setSeriesMessages(messages.filter(msg => !suitablePumps.some(p => p.seriesName === msg.seriesName))); 
+    setSeriesMessages([]); // Ensure no series-specific messages are shown
 
     setShowResults(true);
     if (suitablePumps.length > 0) {
@@ -646,16 +640,7 @@ export function PanelliPumpSelector() {
                         No se encontraron modelos que cumplan con los criterios especificados.
                       </div>
                     )}
-                    {seriesMessages.map((msg, index) => (
-                         !selectionResults.some(r => r.seriesName === msg.seriesName) && (
-                            <p key={`msg-${index}`} className={cn(
-                                "text-sm mt-2 pl-2 border-l-2",
-                                msg.type === 'info' ? "text-muted-foreground border-blue-400" : "text-amber-600 border-amber-400"
-                            )}>
-                                {msg.message}
-                            </p>
-                         )
-                    ))}
+                    {/* Removed seriesMessages.map to only show selected models */}
                   </CardContent>
                 </Card>
                  {/* Render the chart in the UI if results are available */}
