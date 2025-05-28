@@ -5,7 +5,11 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
-import { Droplets, Search, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Droplets, Search, AlertCircle, CheckCircle2, FileDown } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
+import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -30,6 +34,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { allPumpSeries, type PumpSeriesData, type PumpModelData } from '@/lib/panelli-pump-data';
+import { PanelliPerformanceChart, type PanelliChartModelData } from '@/components/panelli-performance-chart';
 
 // Validation schema
 const formSchema = z.object({
@@ -63,13 +68,17 @@ export function PanelliPumpSelector() {
   const [selectionResults, setSelectionResults] = React.useState<SelectionResult[]>([]);
   const [seriesMessages, setSeriesMessages] = React.useState<SeriesMessage[]>([]);
   const [showResults, setShowResults] = React.useState(false);
+  const [submittedCaudal, setSubmittedCaudal] = React.useState<number | null>(null);
+  const [submittedPresion, setSubmittedPresion] = React.useState<number | null>(null);
+  const [isLoadingPdf, setIsLoadingPdf] = React.useState(false);
   const resultsRef = React.useRef<HTMLDivElement>(null);
+  const chartRef = React.useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      caudal: undefined, // Use undefined for number inputs to show placeholder
+      caudal: undefined,
       presion: undefined,
     },
     mode: 'onBlur',
@@ -78,13 +87,13 @@ export function PanelliPumpSelector() {
   const findSuitablePumps = (data: FormData) => {
     const requestedCaudal = data.caudal;
     const requestedPresion = data.presion;
+    setSubmittedCaudal(requestedCaudal);
+    setSubmittedPresion(requestedPresion);
     const suitablePumps: SelectionResult[] = [];
     const messages: SeriesMessage[] = [];
 
     allPumpSeries.forEach((series) => {
-      // 1. Check if requestedCaudal is within the general range of the series (Python's initial if condition)
       if (requestedCaudal > series.minFlow && requestedCaudal < series.maxFlow) {
-        // 2. Find targetFlowRateDisplayIndex
         let targetFlowRateDisplayIndex = -1;
         for (let m = 0; m < series.flowRates.length; m++) {
           if (requestedCaudal <= series.flowRates[m]) {
@@ -93,17 +102,16 @@ export function PanelliPumpSelector() {
           }
         }
 
-        if (targetFlowRateDisplayIndex === -1) {
-          // This case means requestedCaudal is greater than all flowRates in the series,
-          // but still within minFlow/maxFlow. The Python script would effectively say "no cumple".
-          // However, our loop for targetFlowRateDisplayIndex should always find one if previous check passes.
-          // This might only happen if requestedCaudal < series.flowRates[0] AND series.minFlow is very low.
-          // For safety, let's consider if targetFlowRateDisplayIndex remains -1 means no suitable flow point in the table.
-          messages.push({seriesName: series.seriesName, message: `La Serie ${series.seriesName} no tiene un punto de caudal tabulado mayor o igual al solicitado.`, type: 'info'});
-          return; // No suitable flow point in this series' table
+        if (targetFlowRateDisplayIndex === -1 && series.flowRates.length > 0 && requestedCaudal > series.flowRates[series.flowRates.length -1] ) {
+            // If requested caudal is greater than the max flow rate in the table for this series,
+            // but still within general min/max for series, consider the last point in the table.
+             targetFlowRateDisplayIndex = series.flowRates.length - 1;
+        } else if (targetFlowRateDisplayIndex === -1) {
+          messages.push({seriesName: series.seriesName, message: `La Serie ${series.seriesName} no tiene un punto de caudal tabulado adecuado.`, type: 'info'});
+          return;
         }
 
-        // 3. Find the first suitable model in this series
+
         let modelFoundInSeries = false;
         for (let modelIndex = 0; modelIndex < series.models.length; modelIndex++) {
           const currentModel = series.models[modelIndex];
@@ -120,7 +128,7 @@ export function PanelliPumpSelector() {
                 pressureUnit: series.pressureUnit,
               });
               modelFoundInSeries = true;
-              break; // Found the first suitable model for this series, as per Python logic
+              break; 
             }
           }
         }
@@ -134,7 +142,7 @@ export function PanelliPumpSelector() {
     });
 
     setSelectionResults(suitablePumps);
-    setSeriesMessages(messages.filter(msg => !suitablePumps.some(p => p.seriesName === msg.seriesName))); // Show messages only for series without a match
+    setSeriesMessages(messages.filter(msg => !suitablePumps.some(p => p.seriesName === msg.seriesName))); 
 
     setShowResults(true);
     if (suitablePumps.length > 0) {
@@ -147,7 +155,7 @@ export function PanelliPumpSelector() {
         toast({
           title: "Búsqueda Completada",
           description: "No se encontraron modelos que cumplan exactamente los criterios para ninguna serie.",
-          variant: "default", // or "destructive" if preferred for no results
+          variant: "default", 
         });
     }
 
@@ -160,6 +168,210 @@ export function PanelliPumpSelector() {
   const onSubmit: SubmitHandler<FormData> = (data) => {
     findSuitablePumps(data);
   };
+
+  const prepareChartDataForPdf = (): PanelliChartModelData[] => {
+    return selectionResults.map(result => {
+      const seriesData = allPumpSeries.find(s => s.seriesName === result.seriesName);
+      const modelData = seriesData?.models.find(m => m.modelName === result.modelName);
+
+      if (!seriesData || !modelData) {
+        return {
+          name: result.modelName,
+          hp: result.hp,
+          curvePoints: [],
+          actualOperatingPoint: { flow: result.deliveredFlow, pressure: result.deliveredPressure },
+          flowUnit: result.flowUnit,
+          pressureUnit: result.pressureUnit,
+        };
+      }
+
+      const curvePoints = seriesData.flowRates.map((flow, index) => ({
+        flow: flow,
+        pressure: modelData.pressures[index] !== undefined ? modelData.pressures[index] : 0,
+      }));
+
+      return {
+        name: modelData.modelName,
+        hp: modelData.hp,
+        curvePoints: curvePoints,
+        actualOperatingPoint: { flow: result.deliveredFlow, pressure: result.deliveredPressure },
+        flowUnit: seriesData.flowRateUnit,
+        pressureUnit: seriesData.pressureUnit,
+      };
+    });
+  };
+
+
+  const generatePDF = async () => {
+    if (!selectionResults.length || submittedCaudal === null || submittedPresion === null) {
+      toast({
+        title: "Error",
+        description: "No hay resultados de selección o datos de entrada para generar el PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsLoadingPdf(true);
+    toast({ title: "Generando PDF...", description: "Por favor espera." });
+
+    try {
+      const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+      const pageHeight = doc.internal.pageSize.height;
+      const pageWidth = doc.internal.pageSize.width;
+      const margin = 15;
+      const footerHeight = 15;
+      const contentWidth = pageWidth - margin * 2;
+      let currentY = margin;
+
+      const addFooter = (docInstance: jsPDF) => {
+        const pageCount = docInstance.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          docInstance.setPage(i);
+          docInstance.setFontSize(7);
+          docInstance.setTextColor(150);
+          const footerY = pageHeight - margin + 5;
+          const copyrightText = "© 2025, desarrollado por ";
+          docInstance.text(copyrightText, margin, footerY, { align: 'left' });
+          const linkText = "Ing. Melvin E. Padilla";
+          const linkUrl = "https://www.linkedin.com/in/melvin-padilla-3425106";
+          const linkTextWidth = docInstance.getTextWidth(linkText);
+          const copyrightTextWidth = docInstance.getTextWidth(copyrightText);
+          const linkX = margin + copyrightTextWidth;
+          docInstance.setTextColor(Number('0x1A'), Number('0x23'), Number('0x7E'));
+          docInstance.textWithLink(linkText, linkX, footerY, { url: linkUrl });
+          docInstance.setDrawColor(Number('0x1A'), Number('0x23'), Number('0x7E'));
+          docInstance.line(linkX, footerY + 0.5, linkX + linkTextWidth, footerY + 0.5);
+          const periodText = ".";
+          const periodX = linkX + linkTextWidth;
+          docInstance.setTextColor(150);
+          docInstance.text(periodText, periodX, footerY, { align: 'left' });
+          const pageNumText = `Página ${i} de ${pageCount}`;
+          docInstance.text(pageNumText, pageWidth - margin, footerY, { align: 'right' });
+        }
+        docInstance.setTextColor(0);
+      };
+
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(Number('0x1A'), Number('0x23'), Number('0x7E'));
+      doc.text('Reporte de Selección de Bombas Panelli', pageWidth / 2, currentY, { align: 'center' });
+      currentY += 7;
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(0, 0, 0);
+
+      doc.setFontSize(8);
+      const reportDate = format(new Date(), 'dd/MM/yyyy HH:mm');
+      doc.text(`Fecha del Reporte: ${reportDate}`, margin, currentY);
+      currentY += 6;
+
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text('Punto de Trabajo Solicitado', margin, currentY);
+      currentY += 4;
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Parámetro', 'Valor']],
+        body: [
+          ['Caudal Solicitado:', `${submittedCaudal} ${selectionResults[0]?.flowUnit || 'L/s'}`],
+          ['Presión Solicitada:', `${submittedPresion} ${selectionResults[0]?.pressureUnit || 'metros'}`],
+        ],
+        theme: 'grid', styles: { fontSize: 8, cellPadding: 1.2 },
+        headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', fontSize: 8 },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 }, 1: { cellWidth: contentWidth - 60 } },
+        margin: { left: margin, right: margin },
+        didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 6;
+
+      if (selectionResults.length > 0) {
+        if (currentY + 25 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text('Modelos de Bomba Seleccionados', margin, currentY);
+        currentY += 4;
+        doc.setFontSize(8);
+        doc.setFont(undefined, 'normal');
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Serie', 'Modelo', 'HP', 'Caudal Entregado', 'Presión Entregada']],
+          body: selectionResults.map(r => [
+            r.seriesName,
+            r.modelName,
+            r.hp,
+            `${r.deliveredFlow.toFixed(2)} ${r.flowUnit}`,
+            `${r.deliveredPressure} ${r.pressureUnit}`
+          ]),
+          theme: 'grid', styles: { fontSize: 8, cellPadding: 1.2 },
+          headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', fontSize: 8 },
+          margin: { left: margin, right: margin },
+          didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
+        });
+        currentY = (doc as any).lastAutoTable.finalY + 6;
+
+        // Chart Section
+        const chartElement = chartRef.current;
+        const chartDataForPdf = prepareChartDataForPdf();
+        if (chartElement && chartDataForPdf.length > 0 && submittedCaudal && submittedPresion) {
+           const chartTitleY = currentY;
+           if (chartTitleY + 75 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } // Check for chart + title height
+           doc.setFontSize(10); doc.setFont(undefined, 'bold');
+           doc.text('Curvas de Rendimiento de Bombas Seleccionadas', margin, currentY);
+           currentY += 4;
+           doc.setFontSize(8); doc.setFont(undefined, 'normal');
+
+           try {
+             await new Promise(resolve => setTimeout(resolve, 300)); // Ensure chart is rendered
+             const canvas = await html2canvas(chartElement, { scale: 1.5, backgroundColor: '#ffffff', logging: false, useCORS: true });
+             const imgData = canvas.toDataURL('image/png');
+             const imgProps = doc.getImageProperties(imgData);
+             const pdfChartWidth = contentWidth; 
+             const pdfChartHeight = (imgProps.height * pdfChartWidth) / imgProps.width;
+             
+             if (currentY + pdfChartHeight > pageHeight - margin - footerHeight) {
+                 doc.addPage(); 
+                 currentY = margin;
+                 doc.setFontSize(10); doc.setFont(undefined, 'bold'); 
+                 doc.text('Curvas de Rendimiento de Bombas Seleccionadas', margin, currentY); currentY += 4;
+                 doc.setFontSize(8); doc.setFont(undefined, 'normal');
+             }
+             doc.addImage(imgData, 'PNG', margin, currentY, pdfChartWidth, pdfChartHeight);
+             currentY += pdfChartHeight + 4;
+           } catch (error) {
+             console.error("Error generando imagen del gráfico:", error);
+             if (currentY + 8 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
+             doc.setTextColor(255, 0, 0); 
+             doc.setFontSize(8);
+             doc.text('Error generando imagen del gráfico.', margin, currentY); currentY += 6;
+             doc.setTextColor(0, 0, 0);
+             toast({ title: "Error de Gráfico", description: "No se pudo generar la imagen del gráfico para el PDF.", variant: "destructive" });
+           }
+        }
+
+      } else {
+        if (currentY + 10 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
+        doc.setFontSize(8);
+        doc.text('No se encontraron modelos de bomba adecuados para los criterios especificados.', margin, currentY);
+        currentY += 6;
+      }
+
+      addFooter(doc);
+      doc.save(`Reporte_Seleccion_Bomba_Panelli_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`);
+      toast({ title: "PDF Generado", description: "El reporte se ha descargado exitosamente." });
+
+    } catch (error) {
+      console.error("Error generando PDF:", error);
+      toast({
+        title: "Error al Generar PDF",
+        description: "Ocurrió un error inesperado. Revisa la consola.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPdf(false);
+    }
+  };
+
 
   return (
     <>
@@ -223,7 +435,17 @@ export function PanelliPumpSelector() {
                 </CardContent>
               </Card>
 
-              <div className="flex justify-end pt-4">
+              <div className="flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-4 pt-4">
+                <Button
+                  type="button"
+                  onClick={generatePDF}
+                  disabled={!selectionResults.length || isLoadingPdf || !submittedCaudal || !submittedPresion}
+                  variant="outline"
+                  className="rounded-md border-primary text-primary hover:bg-primary/10"
+                >
+                  <FileDown className="mr-2 h-4 w-4" />
+                  {isLoadingPdf ? 'Generando PDF...' : 'Descargar Reporte PDF'}
+                </Button>
                 <Button type="submit" variant="default" className="bg-accent hover:bg-accent/90 rounded-md text-accent-foreground">
                   <Search className="mr-2 h-4 w-4" />
                   Buscar Modelos
@@ -231,6 +453,16 @@ export function PanelliPumpSelector() {
               </div>
             </form>
           </Form>
+
+          {/* Hidden chart for PDF generation */}
+           {showResults && selectionResults.length > 0 && submittedCaudal && submittedPresion && (
+             <div ref={chartRef} className="absolute -left-[9999px] top-0 w-[800px] h-[400px] bg-white p-1" aria-hidden="true">
+                <PanelliPerformanceChart
+                  modelsData={prepareChartDataForPdf()}
+                  requestedPoint={{ flow: submittedCaudal, pressure: submittedPresion }}
+                />
+             </div>
+           )}
 
           <div ref={resultsRef}>
             {showResults && (
@@ -254,7 +486,7 @@ export function PanelliPumpSelector() {
                             Potencia: <span className="font-medium">{result.hp} HP</span>
                           </p>
                           <p className="text-sm text-foreground/90">
-                            Esta bomba entrega aproximadamente:
+                            Este modelo entrega aproximadamente:
                             <span className="font-medium"> {result.deliveredFlow.toFixed(2)} {result.flowUnit}</span> @
                             <span className="font-medium"> {result.deliveredPressure} {result.pressureUnit}</span>.
                           </p>
