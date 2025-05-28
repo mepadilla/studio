@@ -247,7 +247,7 @@ export function PanelliPumpSelector() {
 
       const addFooter = (docInstance: jsPDF) => {
         const pageCount = docInstance.internal.getNumberOfPages();
-        const disclaimerText = "Las curvas mostradas en este reporte son referenciales, el modelo usado es discreto, por lo tanto para mayor detalle o calculos de ingenieria debera referise a las curvas oruiginales del producto. Este reporte debe ser utilizado como aproximacion al calculo real y debera ser supervisado por un profesional en el area con experiencia suficiente para garantizar el calculo adecuado.";
+        const disclaimerText = "Las curvas mostradas en este reporte son referenciales, el modelo usado es discreto, por lo tanto para mayor detalle o calculos de ingenieria debera referise a las curvas originales del producto. Este reporte debe ser utilizado como aproximacion al calculo real y debera ser supervisado por un profesional en el area con experiencia suficiente para garantizar el calculo adecuado.";
         const disclaimerFontSize = 6;
         const copyrightFontSize = 7;
         
