@@ -154,7 +154,11 @@ export default function RootLayout({
                    <MenubarMenu>
                        <MenubarTrigger>Selectores</MenubarTrigger>
                        <MenubarContent>
-                           <MenubarItem disabled>Selector simple Panelli - Próximamente...</MenubarItem>
+                           <MenubarItem asChild>
+                             <Link href="/selectores/panelli-simple" className="w-full">
+                               Selector simple Panelli
+                             </Link>
+                           </MenubarItem>
                            {/* Add selector links/submenus here */}
                        </MenubarContent>
                    </MenubarMenu>
