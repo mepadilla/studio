@@ -156,7 +156,7 @@ export default function RootLayout({
                        <MenubarContent>
                            <MenubarItem asChild>
                              <Link href="/selectores/panelli-simple" className="w-full">
-                               Selector simple Panelli
+                               Selector Simple Panelli
                              </Link>
                            </MenubarItem>
                            {/* Add selector links/submenus here */}
