@@ -5,7 +5,7 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
-import { Droplets, Search, AlertCircle, CheckCircle2, FileDown } from 'lucide-react';
+import { Droplets, Search, AlertCircle, CheckCircle2, FileDown, User, Briefcase, FileText as FileTextIcon, Edit3 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
@@ -29,6 +29,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea'; // Added Textarea
 import { Separator } from '@/components/ui/separator';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
@@ -38,12 +39,16 @@ import { PanelliPerformanceChart, type PanelliChartModelData } from '@/component
 
 // Validation schema
 const formSchema = z.object({
+  solicitante: z.string().optional(),
+  proyecto: z.string().optional(),
+  responsableCalculo: z.string().optional(),
   caudal: z.coerce
     .number({ invalid_type_error: 'Debe ser un número' })
     .positive('El caudal debe ser positivo'),
   presion: z.coerce
     .number({ invalid_type_error: 'Debe ser un número' })
     .positive('La presión debe ser positiva'),
+  notasAdicionales: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -73,13 +78,18 @@ export function PanelliPumpSelector() {
   const [isLoadingPdf, setIsLoadingPdf] = React.useState(false);
   const resultsRef = React.useRef<HTMLDivElement>(null);
   const chartRef = React.useRef<HTMLDivElement>(null);
+  const [pdfFormData, setPdfFormData] = React.useState<FormData | null>(null); // Store all form data for PDF
   const { toast } = useToast();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      solicitante: '',
+      proyecto: '',
+      responsableCalculo: '',
       caudal: undefined,
       presion: undefined,
+      notasAdicionales: '',
     },
     mode: 'onBlur',
   });
@@ -89,24 +99,36 @@ export function PanelliPumpSelector() {
     const requestedPresion = data.presion;
     setSubmittedCaudal(requestedCaudal);
     setSubmittedPresion(requestedPresion);
+    setPdfFormData(data); // Store all form data
     const suitablePumps: SelectionResult[] = [];
     const messages: SeriesMessage[] = [];
 
     allPumpSeries.forEach((series) => {
-      if (requestedCaudal > series.minFlow && requestedCaudal < series.maxFlow) {
+      if (requestedCaudal >= series.minFlow && requestedCaudal <= series.maxFlow) { // Inclusive of min/max flow
         let targetFlowRateDisplayIndex = -1;
+        // Find the closest flow rate in the table that is >= requestedCaudal
+        // If no exact match or greater, take the largest available in the series if requestedCaudal is high
+        // Or smallest if requestedCaudal is very low.
+        // This logic aims to find the *best fit* or closest *higher* point in the table.
+        
+        let bestFitIndex = -1;
+        let minDiff = Infinity;
+
+        // Try to find the first point in the table where table_flow >= requested_flow
         for (let m = 0; m < series.flowRates.length; m++) {
-          if (requestedCaudal <= series.flowRates[m]) {
+          if (series.flowRates[m] >= requestedCaudal) {
             targetFlowRateDisplayIndex = m;
             break;
           }
         }
 
-        if (targetFlowRateDisplayIndex === -1 && series.flowRates.length > 0 && requestedCaudal > series.flowRates[series.flowRates.length -1] ) {
-            // If requested caudal is greater than the max flow rate in the table for this series,
-            // but still within general min/max for series, consider the last point in the table.
-             targetFlowRateDisplayIndex = series.flowRates.length - 1;
-        } else if (targetFlowRateDisplayIndex === -1) {
+        // If not found (e.g., requestedCaudal is > max table flow but within series general maxFlow)
+        // then use the last point in the table.
+        if (targetFlowRateDisplayIndex === -1 && series.flowRates.length > 0) {
+            targetFlowRateDisplayIndex = series.flowRates.length - 1;
+        }
+        
+        if (targetFlowRateDisplayIndex === -1) {
           messages.push({seriesName: series.seriesName, message: `La Serie ${series.seriesName} no tiene un punto de caudal tabulado adecuado.`, type: 'info'});
           return;
         }
@@ -133,11 +155,11 @@ export function PanelliPumpSelector() {
           }
         }
         if (!modelFoundInSeries) {
-            messages.push({seriesName: series.seriesName, message: `Para la Serie ${series.seriesName}: Ningún modelo cumple la presión requerida con el caudal adecuado.`, type: 'info'});
+            messages.push({seriesName: series.seriesName, message: `Para la Serie ${series.seriesName}: Ningún modelo cumple la presión requerida con el caudal tabulado más cercano (${series.flowRates[targetFlowRateDisplayIndex]} ${series.flowRateUnit}).`, type: 'info'});
         }
 
       } else {
-        messages.push({seriesName: series.seriesName, message: `La Serie ${series.seriesName} no cumple la condición de caudal.`, type: 'info'});
+        messages.push({seriesName: series.seriesName, message: `El caudal solicitado está fuera del rango de operación de la Serie ${series.seriesName} (${series.minFlow}-${series.maxFlow} ${series.flowRateUnit}).`, type: 'warning'});
       }
     });
 
@@ -203,7 +225,7 @@ export function PanelliPumpSelector() {
 
 
   const generatePDF = async () => {
-    if (!selectionResults.length || submittedCaudal === null || submittedPresion === null) {
+    if (!selectionResults.length || submittedCaudal === null || submittedPresion === null || !pdfFormData) {
       toast({
         title: "Error",
         description: "No hay resultados de selección o datos de entrada para generar el PDF.",
@@ -263,7 +285,33 @@ export function PanelliPumpSelector() {
       const reportDate = format(new Date(), 'dd/MM/yyyy HH:mm');
       doc.text(`Fecha del Reporte: ${reportDate}`, margin, currentY);
       currentY += 6;
+      
+      // Detalles de la Solicitud
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text('Detalles de la Solicitud', margin, currentY);
+      currentY += 4;
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      const solicitudDetails = [
+        ['Solicitante:', pdfFormData.solicitante || 'N/D'],
+        ['Proyecto:', pdfFormData.proyecto || 'N/D'],
+        ['Responsable del Cálculo:', pdfFormData.responsableCalculo || 'N/D'],
+      ];
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Concepto', 'Información']],
+        body: solicitudDetails,
+        theme: 'grid', styles: { fontSize: 8, cellPadding: 1.2 },
+        headStyles: { fillColor: [245, 245, 245], textColor: [50, 50, 50], fontStyle: 'bold', fontSize: 8 },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 }, 1: { cellWidth: contentWidth - 60 } },
+        margin: { left: margin, right: margin },
+        didDrawPage: (data) => { currentY = data.cursor?.y ?? currentY; }
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 6;
 
+
+      if (currentY + 20 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
       doc.setFontSize(10);
       doc.setFont(undefined, 'bold');
       doc.text('Punto de Trabajo Solicitado', margin, currentY);
@@ -310,19 +358,18 @@ export function PanelliPumpSelector() {
         });
         currentY = (doc as any).lastAutoTable.finalY + 6;
 
-        // Chart Section
         const chartElement = chartRef.current;
         const chartDataForPdf = prepareChartDataForPdf();
         if (chartElement && chartDataForPdf.length > 0 && submittedCaudal && submittedPresion) {
            const chartTitleY = currentY;
-           if (chartTitleY + 75 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } // Check for chart + title height
+           if (chartTitleY + 75 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } 
            doc.setFontSize(10); doc.setFont(undefined, 'bold');
            doc.text('Curvas de Rendimiento de Bombas Seleccionadas', margin, currentY);
            currentY += 4;
            doc.setFontSize(8); doc.setFont(undefined, 'normal');
 
            try {
-             await new Promise(resolve => setTimeout(resolve, 300)); // Ensure chart is rendered
+             await new Promise(resolve => setTimeout(resolve, 300)); 
              const canvas = await html2canvas(chartElement, { scale: 1.5, backgroundColor: '#ffffff', logging: false, useCORS: true });
              const imgData = canvas.toDataURL('image/png');
              const imgProps = doc.getImageProperties(imgData);
@@ -355,6 +402,21 @@ export function PanelliPumpSelector() {
         doc.text('No se encontraron modelos de bomba adecuados para los criterios especificados.', margin, currentY);
         currentY += 6;
       }
+
+      // Notas Adicionales
+      if (pdfFormData.notasAdicionales && pdfFormData.notasAdicionales.trim() !== '') {
+        if (currentY + 20 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text('Notas Adicionales', margin, currentY);
+        currentY += 4;
+        doc.setFontSize(8);
+        doc.setFont(undefined, 'normal');
+        const notesLines = doc.splitTextToSize(pdfFormData.notasAdicionales, contentWidth);
+        doc.text(notesLines, margin, currentY);
+        currentY += (notesLines.length * 3.5) + 4; // Adjust spacing based on lines
+      }
+
 
       addFooter(doc);
       doc.save(`Reporte_Seleccion_Bomba_Panelli_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`);
@@ -389,6 +451,53 @@ export function PanelliPumpSelector() {
         <CardContent className="p-6 bg-secondary/30">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <Card className="bg-card shadow-md rounded-md">
+                <CardHeader>
+                  <CardTitle className="text-lg text-primary flex items-center"><FileTextIcon className="mr-2 h-5 w-5"/>Detalles de la Solicitud</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="solicitante"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground/80 flex items-center"><User className="mr-1 h-4 w-4"/>Solicitante</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nombre de quien solicita" {...field} className="rounded-md" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="proyecto"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground/80 flex items-center"><Briefcase className="mr-1 h-4 w-4"/>Proyecto</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nombre del proyecto" {...field} className="rounded-md" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="responsableCalculo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground/80 flex items-center"><Edit3 className="mr-1 h-4 w-4"/>Responsable del Cálculo</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nombre del responsable" {...field} className="rounded-md" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
               <Card className="bg-card shadow-md rounded-md">
                 <CardHeader>
                   <CardTitle className="text-lg text-primary">Punto de Trabajo Requerido</CardTitle>
@@ -434,12 +543,33 @@ export function PanelliPumpSelector() {
                   />
                 </CardContent>
               </Card>
+              
+              <Card className="bg-card shadow-md rounded-md">
+                <CardHeader>
+                  <CardTitle className="text-lg text-primary">Notas Adicionales</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <FormField
+                    control={form.control}
+                    name="notasAdicionales"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Textarea placeholder="Ingrese cualquier nota o comentario adicional aquí..." {...field} className="rounded-md" rows={3}/>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
 
               <div className="flex flex-col md:flex-row justify-end space-y-2 md:space-y-0 md:space-x-4 pt-4">
                 <Button
                   type="button"
                   onClick={generatePDF}
-                  disabled={!selectionResults.length || isLoadingPdf || !submittedCaudal || !submittedPresion}
+                  disabled={!selectionResults.length || isLoadingPdf || !submittedCaudal || !submittedPresion || !pdfFormData}
                   variant="outline"
                   className="rounded-md border-primary text-primary hover:bg-primary/10"
                 >
@@ -454,7 +584,6 @@ export function PanelliPumpSelector() {
             </form>
           </Form>
 
-          {/* Hidden chart for PDF generation */}
            {showResults && selectionResults.length > 0 && submittedCaudal && submittedPresion && (
              <div ref={chartRef} className="absolute -left-[9999px] top-0 w-[800px] h-[400px] bg-white p-1" aria-hidden="true">
                 <PanelliPerformanceChart
@@ -510,6 +639,20 @@ export function PanelliPumpSelector() {
                     ))}
                   </CardContent>
                 </Card>
+                 {/* Render the chart in the UI if results are available */}
+                {selectionResults.length > 0 && submittedCaudal && submittedPresion && (
+                  <Card className="mt-6 bg-card shadow-md rounded-md">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-primary">Curvas de Rendimiento</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0"> {/* Remove default top padding for content */}
+                      <PanelliPerformanceChart
+                        modelsData={prepareChartDataForPdf()}
+                        requestedPoint={{ flow: submittedCaudal, pressure: submittedPresion }}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
               </>
             )}
           </div>
@@ -532,3 +675,4 @@ export function PanelliPumpSelector() {
     </>
   );
 }
+
