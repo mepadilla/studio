@@ -241,36 +241,55 @@ export function PanelliPumpSelector() {
       const pageHeight = doc.internal.pageSize.height;
       const pageWidth = doc.internal.pageSize.width;
       const margin = 15;
-      const footerHeight = 15;
+      const footerContentHeight = 20; // Approximate height for the footer content (disclaimer + original footer)
       const contentWidth = pageWidth - margin * 2;
       let currentY = margin;
 
       const addFooter = (docInstance: jsPDF) => {
         const pageCount = docInstance.internal.getNumberOfPages();
+        const disclaimerText = "Las curvas mostradas en este reporte son referenciales, el modelo usado es discreto, por lo tanto para mayor detalle o calculos de ingenieria debera referise a las curvas oruiginales del producto. Este reporte debe ser utilizado como aproximacion al calculo real y debera ser supervisado por un profesional en el area con experiencia suficiente para garantizar el calculo adecuado.";
+        const disclaimerFontSize = 6;
+        const copyrightFontSize = 7;
+        
         for (let i = 1; i <= pageCount; i++) {
           docInstance.setPage(i);
-          docInstance.setFontSize(7);
+          
+          // Disclaimer
+          docInstance.setFontSize(disclaimerFontSize);
+          docInstance.setFont(undefined, 'italic');
+          docInstance.setTextColor(120, 120, 120); // Darker gray for disclaimer
+          const disclaimerLines = docInstance.splitTextToSize(disclaimerText, contentWidth);
+          const disclaimerHeight = disclaimerLines.length * (disclaimerFontSize * 0.352778 * 1.2); // mm, with line spacing
+          let disclaimerY = pageHeight - margin - disclaimerHeight - (copyrightFontSize * 0.352778 * 1.2) - 2; // Position above copyright
+
+          docInstance.text(disclaimerLines, margin, disclaimerY);
+
+          // Original Footer Content (Copyright & Page Number)
+          docInstance.setFontSize(copyrightFontSize);
+          docInstance.setFont(undefined, 'normal');
           docInstance.setTextColor(150);
-          const footerY = pageHeight - margin + 5;
+          const copyrightFooterY = pageHeight - margin + 5 - (copyrightFontSize * 0.352778); // Adjusted Y based on disclaimer
+
           const copyrightText = "© 2025, desarrollado por ";
-          docInstance.text(copyrightText, margin, footerY, { align: 'left' });
+          docInstance.text(copyrightText, margin, copyrightFooterY, { align: 'left' });
           const linkText = "Ing. Melvin E. Padilla";
           const linkUrl = "https://www.linkedin.com/in/melvin-padilla-3425106";
           const linkTextWidth = docInstance.getTextWidth(linkText);
           const copyrightTextWidth = docInstance.getTextWidth(copyrightText);
           const linkX = margin + copyrightTextWidth;
           docInstance.setTextColor(Number('0x1A'), Number('0x23'), Number('0x7E'));
-          docInstance.textWithLink(linkText, linkX, footerY, { url: linkUrl });
+          docInstance.textWithLink(linkText, linkX, copyrightFooterY, { url: linkUrl });
           docInstance.setDrawColor(Number('0x1A'), Number('0x23'), Number('0x7E'));
-          docInstance.line(linkX, footerY + 0.5, linkX + linkTextWidth, footerY + 0.5);
+          docInstance.line(linkX, copyrightFooterY + 0.5, linkX + linkTextWidth, copyrightFooterY + 0.5);
           const periodText = ".";
           const periodX = linkX + linkTextWidth;
           docInstance.setTextColor(150);
-          docInstance.text(periodText, periodX, footerY, { align: 'left' });
+          docInstance.text(periodText, periodX, copyrightFooterY, { align: 'left' });
           const pageNumText = `Página ${i} de ${pageCount}`;
-          docInstance.text(pageNumText, pageWidth - margin, footerY, { align: 'right' });
+          docInstance.text(pageNumText, pageWidth - margin, copyrightFooterY, { align: 'right' });
         }
         docInstance.setTextColor(0);
+         docInstance.setFont(undefined, 'normal');
       };
 
       doc.setFontSize(14);
@@ -311,7 +330,7 @@ export function PanelliPumpSelector() {
       currentY = (doc as any).lastAutoTable.finalY + 6;
 
 
-      if (currentY + 20 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
+      if (currentY + 20 > pageHeight - margin - footerContentHeight) { doc.addPage(); currentY = margin; }
       doc.setFontSize(10);
       doc.setFont(undefined, 'bold');
       doc.text('Punto de Trabajo Solicitado', margin, currentY);
@@ -334,7 +353,7 @@ export function PanelliPumpSelector() {
       currentY = (doc as any).lastAutoTable.finalY + 6;
 
       if (selectionResults.length > 0) {
-        if (currentY + 25 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
+        if (currentY + 25 > pageHeight - margin - footerContentHeight) { doc.addPage(); currentY = margin; }
         doc.setFontSize(10);
         doc.setFont(undefined, 'bold');
         doc.text('Modelos de Bomba Seleccionados', margin, currentY);
@@ -362,7 +381,7 @@ export function PanelliPumpSelector() {
         const chartDataForPdf = prepareChartDataForPdf();
         if (chartElement && chartDataForPdf.length > 0 && submittedCaudal && submittedPresion) {
            const chartTitleY = currentY;
-           if (chartTitleY + 75 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; } 
+           if (chartTitleY + 75 > pageHeight - margin - footerContentHeight) { doc.addPage(); currentY = margin; } 
            doc.setFontSize(10); doc.setFont(undefined, 'bold');
            doc.text('Curvas de Rendimiento de Bombas Seleccionadas', margin, currentY);
            currentY += 4;
@@ -376,7 +395,7 @@ export function PanelliPumpSelector() {
              const pdfChartWidth = contentWidth; 
              const pdfChartHeight = (imgProps.height * pdfChartWidth) / imgProps.width;
              
-             if (currentY + pdfChartHeight > pageHeight - margin - footerHeight) {
+             if (currentY + pdfChartHeight > pageHeight - margin - footerContentHeight) {
                  doc.addPage(); 
                  currentY = margin;
                  doc.setFontSize(10); doc.setFont(undefined, 'bold'); 
@@ -387,7 +406,7 @@ export function PanelliPumpSelector() {
              currentY += pdfChartHeight + 4;
            } catch (error) {
              console.error("Error generando imagen del gráfico:", error);
-             if (currentY + 8 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
+             if (currentY + 8 > pageHeight - margin - footerContentHeight) { doc.addPage(); currentY = margin; }
              doc.setTextColor(255, 0, 0); 
              doc.setFontSize(8);
              doc.text('Error generando imagen del gráfico.', margin, currentY); currentY += 6;
@@ -397,7 +416,7 @@ export function PanelliPumpSelector() {
         }
 
       } else {
-        if (currentY + 10 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
+        if (currentY + 10 > pageHeight - margin - footerContentHeight) { doc.addPage(); currentY = margin; }
         doc.setFontSize(8);
         doc.text('No se encontraron modelos de bomba adecuados para los criterios especificados.', margin, currentY);
         currentY += 6;
@@ -405,7 +424,7 @@ export function PanelliPumpSelector() {
 
       // Notas Adicionales
       if (pdfFormData.notasAdicionales && pdfFormData.notasAdicionales.trim() !== '') {
-        if (currentY + 20 > pageHeight - margin - footerHeight) { doc.addPage(); currentY = margin; }
+        if (currentY + 20 > pageHeight - margin - footerContentHeight) { doc.addPage(); currentY = margin; }
         doc.setFontSize(10);
         doc.setFont(undefined, 'bold');
         doc.text('Notas Adicionales', margin, currentY);
