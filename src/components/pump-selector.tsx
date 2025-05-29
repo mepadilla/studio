@@ -451,7 +451,7 @@ export function PumpSelector() {
         <CardHeader className="bg-primary text-primary-foreground">
           <CardTitle className="text-2xl font-bold flex items-center">
             <Droplets className="mr-2 h-7 w-7" />
-            Selector Simple de Bombas Sumergibles {selectedBrand ? `- ${selectedBrand.brandName}` : ''}
+            Selector Simple de Bombas Sumergibles
           </CardTitle>
           <CardDescription className="text-primary-foreground/80">
             Seleccione la marca e introduce el caudal y la presión requeridos para encontrar modelos de bombas adecuados.
@@ -702,4 +702,3 @@ export function PumpSelector() {
     </>
   );
 }
-
