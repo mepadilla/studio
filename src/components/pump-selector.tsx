@@ -1,5 +1,3 @@
-// This file is being renamed to src/components/pump-selector.tsx
-// Its content will be significantly updated to support brand selection.
 
 "use client";
 
@@ -37,12 +35,11 @@ import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { ALL_BRANDS_DATA, type BrandData } from '@/lib/pump-data'; // Updated import
-import type { PumpSeriesData, PumpModelData } from '@/lib/pump-data/pump-data.types'; // Corrected import path
+import type { PumpSeriesData, PumpModelData } from '@/lib/pump-data/pump-data.types';
 import { PanelliPerformanceChart, type PanelliChartModelData } from '@/components/panelli-performance-chart';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
-// Validation schema
 const formSchema = z.object({
   brandName: z.string().min(1, "Seleccione una marca"),
   solicitante: z.string().optional(),
@@ -67,10 +64,10 @@ interface SelectionResult {
   deliveredPressure: number;
   flowUnit: string;
   pressureUnit: string;
-  brandName: string; // Added brandName
+  brandName: string;
 }
 
-export function PumpSelector() { // Renamed component
+export function PumpSelector() {
   const [selectionResults, setSelectionResults] = React.useState<SelectionResult[]>([]);
   const [showResults, setShowResults] = React.useState(false);
   const [submittedCaudal, setSubmittedCaudal] = React.useState<number | null>(null);
@@ -79,14 +76,16 @@ export function PumpSelector() { // Renamed component
   const resultsRef = React.useRef<HTMLDivElement>(null);
   const chartRef = React.useRef<HTMLDivElement>(null);
   const [pdfFormData, setPdfFormData] = React.useState<FormData | null>(null);
-  const [selectedBrand, setSelectedBrand] = React.useState<BrandData | null>(null);
+  const [selectedBrand, setSelectedBrand] = React.useState<BrandData | null>(
+    ALL_BRANDS_DATA.length > 0 ? ALL_BRANDS_DATA[0] : null
+  );
 
   const { toast } = useToast();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      brandName: ALL_BRANDS_DATA.length > 0 ? ALL_BRANDS_DATA[0].brandName : "", // Default to first brand
+      brandName: ALL_BRANDS_DATA.length > 0 ? ALL_BRANDS_DATA[0].brandName : "",
       solicitante: '',
       proyecto: '',
       responsableCalculo: '',
@@ -97,16 +96,19 @@ export function PumpSelector() { // Renamed component
     mode: 'onBlur',
   });
 
+  const watchedBrandName = form.watch("brandName");
+
   React.useEffect(() => {
-    const currentBrandName = form.getValues("brandName");
-    if (currentBrandName) {
-      const brand = ALL_BRANDS_DATA.find(b => b.brandName === currentBrandName);
+    if (watchedBrandName) {
+      const brand = ALL_BRANDS_DATA.find(b => b.brandName === watchedBrandName);
       setSelectedBrand(brand || null);
-    } else if (ALL_BRANDS_DATA.length > 0) {
+    } else if (ALL_BRANDS_DATA.length > 0 && !selectedBrand) {
+        // If no brandName is set in form (e.g. on initial load and brandName is empty string)
+        // and selectedBrand is not yet set, default to the first brand.
         form.setValue("brandName", ALL_BRANDS_DATA[0].brandName);
         setSelectedBrand(ALL_BRANDS_DATA[0]);
     }
-  }, [form.watch("brandName"), form]);
+  }, [watchedBrandName, form, selectedBrand]);
 
 
   const findSuitablePumps = (data: FormData) => {
@@ -154,7 +156,7 @@ export function PumpSelector() { // Renamed component
                 deliveredPressure: pressureAtTargetFlow,
                 flowUnit: series.flowRateUnit,
                 pressureUnit: series.pressureUnit,
-                brandName: selectedBrand.brandName, // Add brand name to result
+                brandName: selectedBrand.brandName,
               });
               break; 
             }
@@ -469,12 +471,13 @@ export function PumpSelector() { // Renamed component
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-foreground/80 flex items-center"><Layers className="mr-1 h-4 w-4"/>Marca de la Bomba</FormLabel>
-                        <Select onValueChange={(value) => {
-                            field.onChange(value);
-                            const brand = ALL_BRANDS_DATA.find(b => b.brandName === value);
-                            setSelectedBrand(brand || null);
-                            // Optionally reset flow/pressure units in form if they change per brand
-                        }} defaultValue={field.value}>
+                        <Select
+                            onValueChange={(value) => {
+                                field.onChange(value);
+                                // No es necesario llamar a setSelectedBrand aquí si el useEffect ya lo maneja.
+                            }}
+                            defaultValue={field.value} // Asegúrate que defaultValue está correctamente asignado
+                        >
                           <FormControl>
                             <SelectTrigger className="rounded-md">
                               <SelectValue placeholder="Seleccione una marca" />

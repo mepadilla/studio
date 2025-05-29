@@ -1,32 +1,13 @@
-// This file is being renamed and its content moved.
-// New location: src/lib/pump-data/panelli-data.ts
-// This old file will be deleted by renaming.
-// See src/lib/pump-data/index.ts for the new data aggregation.
 
-// Definición de tipos para los datos de las bombas
-export interface PumpModelData {
-  modelName: string;
-  hp: string;
-  pressures: number[]; // Corresponde a los flowRates en PumpSeriesData
-}
-
-export interface PumpSeriesData {
-  seriesName: string; // Ej.: "95PR08"
-  flowRateUnit: string; // Ej.: "l/s"
-  pressureUnit: string; // Ej.: "metros"
-  minFlow: number; // Caudal mínimo para el if del script Python
-  maxFlow: number; // Caudal máximo para el if del script Python
-  flowRates: number[]; // Valores de caudal del encabezado
-  models: PumpModelData[];
-}
+import type { PumpSeriesData, PumpModelData } from './pump-data.types';
 
 // Datos de las series de bombas Panelli
 export const P95PR08_DATA: PumpSeriesData = {
   seriesName: "95PR08",
   flowRateUnit: "l/s",
   pressureUnit: "metros",
-  minFlow: 0,    // Límite inferior del if Python (exclusive)
-  maxFlow: 0.7,  // Límite superior del if Python (exclusive)
+  minFlow: 0,
+  maxFlow: 0.7,
   flowRates: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
   models: [
     { modelName: "95PR0806", hp: "0.5", pressures: [51, 48, 45, 42, 38, 34, 28] },
@@ -48,7 +29,7 @@ export const P95PR15_DATA: PumpSeriesData = {
   models: [
     { modelName: "95PR1506", hp: "0.75", pressures: [51, 46, 39, 29, 15] },
     { modelName: "95PR1509", hp: "1", pressures: [76, 69, 58, 43, 22] },
-    { modelName: "95PR1513", hp: "1.5", pressures: [110, 99, 84, 62, 32] }, // Corregido HP a string "1.5"
+    { modelName: "95PR1513", hp: "1.5", pressures: [110, 99, 84, 62, 32] },
     { modelName: "95PR1517", hp: "2", pressures: [144, 130, 110, 81, 41] },
     { modelName: "95PR1525", hp: "3", pressures: [212, 191, 162, 119, 61] },
   ],
@@ -157,7 +138,7 @@ export const P95PR75_DATA: PumpSeriesData = {
   ],
 };
 
-export const P95PR95_DATA: PumpSeriesData = { // El Python tiene 95PR7505, 08, 12, 16. Asumo que es un typo y debería ser P95PR95XX
+export const P95PR95_DATA: PumpSeriesData = {
   seriesName: "95PR95",
   flowRateUnit: "l/s",
   pressureUnit: "metros",
@@ -165,13 +146,12 @@ export const P95PR95_DATA: PumpSeriesData = { // El Python tiene 95PR7505, 08, 1
   maxFlow: 8.0,
   flowRates: [3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
   models: [
-    { modelName: "95PR9505", hp: "3", pressures: [36, 33, 30, 25, 19, 13] }, // Model name adjusted
-    { modelName: "95PR9508", hp: "5.5", pressures: [72, 66, 60, 49, 37, 27] },// Model name adjusted
-    { modelName: "95PR9512", hp: "7.5", pressures: [94, 86, 77, 64, 48, 35] },// Model name adjusted
-    { modelName: "95PR9516", hp: "10", pressures: [130, 119, 107, 89, 67, 48] },// Model name adjusted
+    { modelName: "95PR9505", hp: "3", pressures: [36, 33, 30, 25, 19, 13] },
+    { modelName: "95PR9508", hp: "5.5", pressures: [72, 66, 60, 49, 37, 27] },
+    { modelName: "95PR9512", hp: "7.5", pressures: [94, 86, 77, 64, 48, 35] },
+    { modelName: "95PR9516", hp: "10", pressures: [130, 119, 107, 89, 67, 48] },
   ],
 };
-
 
 export const allPumpSeries: PumpSeriesData[] = [
   P95PR08_DATA,
